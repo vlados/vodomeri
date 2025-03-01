@@ -12,18 +12,9 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group heading="Water Meters" class="grid">
+                <flux:navlist.group heading="Platform" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="clipboard-document-list" :href="route('readings.history')" :current="request()->routeIs('readings.history')" wire:navigate>{{ __('Reading History') }}</flux:navlist.item>
-                    <flux:navlist.item icon="document-text" :href="route('readings.multiple')" :current="request()->routeIs('readings.multiple')" wire:navigate>{{ __('Submit All Readings') }}</flux:navlist.item>
-                    <flux:navlist.item icon="plus-circle" :href="route('meters.add')" :current="request()->routeIs('meters.add')" wire:navigate>{{ __('Add Water Meter') }}</flux:navlist.item>
                 </flux:navlist.group>
-                
-                @if (auth()->user()->hasRole('admin'))
-                <flux:navlist.group heading="Administration" class="grid">
-                    <flux:navlist.item icon="cog-6-tooth" href="/admin" target="_blank">{{ __('Admin Panel') }}</flux:navlist.item>
-                </flux:navlist.group>
-                @endif
             </flux:navlist>
 
             <flux:spacer />

@@ -14,18 +14,70 @@ class MeterReadings extends Component
     
     public $filter = [
         'meter_type' => '',
-        'status' => '',
         'date_range' => 'all',
+        'reading_date' => '',
     ];
+    
+    public $sortField = 'reading_date';
+    public $sortDirection = 'desc';
     
     public function mount()
     {
         // Initialize filter with defaults
+        $this->filter['reading_date'] = '';
     }
     
     public function updatedFilter()
     {
         $this->resetPage();
+    }
+    
+    public function updatedFilterDateRange($value)
+    {
+        if (!empty($value) && $value !== 'all') {
+            // If we select a predefined date range, clear the specific reading date
+            $this->filter['reading_date'] = '';
+        }
+        $this->resetPage();
+    }
+    
+    public function updatedFilterReadingDate($value)
+    {
+        if (!empty($value)) {
+            // If we select a specific reading date, clear the predefined date range
+            $this->filter['date_range'] = 'all';
+        }
+        $this->resetPage();
+    }
+    
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+    
+    // No longer needed - remove date range functionality
+    public function getAvailableDatesProperty()
+    {
+        $user = Auth::user();
+        $apartmentIds = $user->apartments->pluck('id');
+        $waterMeterIds = WaterMeter::whereIn('apartment_id', $apartmentIds)->pluck('id');
+        
+        return Reading::whereIn('water_meter_id', $waterMeterIds)
+            ->select('reading_date')
+            ->distinct()
+            ->orderBy('reading_date', 'desc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'value' => $item->reading_date->format('Y-m-d'),
+                    'label' => $item->reading_date->format('d.m.Y')
+                ];
+            });
     }
     
     public function render()
@@ -40,18 +92,13 @@ class MeterReadings extends Component
         
         // Get readings for these water meters
         $query = Reading::whereIn('water_meter_id', $waterMeterIds)
-            ->with(['waterMeter.apartment', 'user'])
-            ->orderByDesc('reading_date');
+            ->with(['waterMeter.apartment', 'user']);
             
         // Apply filters
         if (!empty($this->filter['meter_type'])) {
             $query->whereHas('waterMeter', function($q) {
                 $q->where('type', $this->filter['meter_type']);
             });
-        }
-        
-        if (!empty($this->filter['status'])) {
-            $query->where('status', $this->filter['status']);
         }
         
         if (!empty($this->filter['date_range'])) {
@@ -68,10 +115,29 @@ class MeterReadings extends Component
             }
         }
         
+        // Filter by specific reading date if selected
+        if (!empty($this->filter['reading_date'])) {
+            $query->whereDate('reading_date', $this->filter['reading_date']);
+        }
+        
+        // Apply sorting
+        if ($this->sortField === 'serial_number') {
+            $query->join('water_meters', 'readings.water_meter_id', '=', 'water_meters.id')
+                  ->orderBy('water_meters.serial_number', $this->sortDirection)
+                  ->select('readings.*');
+        } elseif ($this->sortField === 'meter_type') {
+            $query->join('water_meters', 'readings.water_meter_id', '=', 'water_meters.id')
+                  ->orderBy('water_meters.type', $this->sortDirection)
+                  ->select('readings.*');
+        } else {
+            $query->orderBy($this->sortField, $this->sortDirection);
+        }
+        
         $readings = $query->paginate(10);
         
         return view('livewire.resident.meter-readings', [
             'readings' => $readings,
+            'availableDates' => $this->availableDates,
         ]);
     }
 }

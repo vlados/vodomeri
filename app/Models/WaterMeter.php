@@ -18,7 +18,6 @@ class WaterMeter extends Model
         'location',
         'installation_date',
         'initial_reading',
-        'status',
     ];
     
     protected $casts = [

@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Invitation;
+use App\Models\Bug;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -10,16 +10,17 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InvitationMail extends Mailable implements ShouldQueue
+class BugReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(
-        public Invitation $invitation,
-    ) {}
+    public function __construct(public Bug $bug)
+    {
+        //
+    }
 
     /**
      * Get the message envelope.
@@ -27,7 +28,7 @@ class InvitationMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Покана за Водомери - Система за отчитане на водомери',
+            subject: 'Нов доклад за грешка: ' . $this->bug->title,
         );
     }
 
@@ -37,12 +38,7 @@ class InvitationMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.invitation',
-            with: [
-                'invitationUrl' => route('invitation.accept', ['code' => $this->invitation->code]),
-                'expiresAt' => $this->invitation->expires_at->format('d.m.Y H:i'),
-                'apartmentNumber' => $this->invitation->apartment->number,
-            ],
+            view: 'emails.bug-report',
         );
     }
 

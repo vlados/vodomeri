@@ -17,7 +17,6 @@ class Reading extends Model
         'value',
         'consumption',
         'photo_path',
-        'status',
         'notes',
     ];
     

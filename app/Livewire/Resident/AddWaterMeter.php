@@ -56,10 +56,9 @@ class AddWaterMeter extends Component
         $waterMeter->location = $this->location;
         $waterMeter->installation_date = $this->installationDate;
         $waterMeter->initial_reading = $this->initialReading;
-        $waterMeter->status = 'pending'; // Added status for approval workflow
         $waterMeter->save();
         
-        session()->flash('success', 'Water meter added successfully. It will need to be approved by an administrator.');
+        session()->flash('success', __('Water meter added successfully.'));
         return redirect()->route('dashboard');
     }
     

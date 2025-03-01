@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Set Carbon locale to Bulgarian
+        // \Carbon\Carbon::setLocale('bg_BG');
+        
+        // Set default date format for Bulgaria
+        // \Carbon\Carbon::setToStringFormat('d.m.Y H:i');
     }
 }

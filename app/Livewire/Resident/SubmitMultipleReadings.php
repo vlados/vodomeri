@@ -53,7 +53,6 @@ class SubmitMultipleReadings extends Component
                 'serial_number' => $meter->serial_number,
                 'location' => $meter->location,
                 'value' => '',
-                'notes' => '',
                 'photo' => null,
                 'previous_value' => $previousReading ? $previousReading->value : $meter->initial_reading,
                 'previous_date' => $previousReading ? $previousReading->reading_date->format('M d, Y') : 'Initial',
@@ -111,7 +110,6 @@ class SubmitMultipleReadings extends Component
             $reading->user_id = Auth::id();
             $reading->reading_date = Carbon::parse($this->readingDate);
             $reading->value = $meterData['value'];
-            $reading->status = 'pending';
             $reading->notes = $meterData['notes'] ?? null;
             $reading->photo_path = $photoPath;
             $reading->save();
@@ -120,9 +118,9 @@ class SubmitMultipleReadings extends Component
         }
         
         if ($readingsSubmitted > 0) {
-            session()->flash('success', "{$readingsSubmitted} reading(s) submitted successfully and pending approval.");
+            session()->flash('success', "{$readingsSubmitted} " . __('readings submitted successfully.'));
         } else {
-            session()->flash('error', "No readings were submitted. Please enter at least one reading value.");
+            session()->flash('error', __('No readings were submitted. Please enter at least one reading value.'));
             return;
         }
         

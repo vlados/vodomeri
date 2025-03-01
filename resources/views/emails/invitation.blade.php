@@ -1,23 +1,23 @@
 <x-mail::message>
-# Invitation to Vodomeri
+# Покана за Водомери
 
-You have been invited to join the Vodomeri Water Meter Tracking System for **Apartment {{ $apartmentNumber }}**.
+Поканени сте да се присъедините към системата за отчитане на водомери Водомери за **Апартамент {{ $apartmentNumber }}**.
 
-With this system, you will be able to:
-- Submit water meter readings
-- View your consumption history 
-- Access historical billing information
+С тази система ще можете да:
+- Подавате показания на водомери
+- Преглеждате историята на консумацията си
+- Достъпвате историческа информация за плащания
 
-Click the button below to accept the invitation and create your account:
+Натиснете бутона по-долу, за да приемете поканата и да създадете своя акаунт:
 
 <x-mail::button :url="$invitationUrl">
-Accept Invitation
+Приеми поканата
 </x-mail::button>
 
-This invitation will expire on: **{{ $expiresAt }}**
+Тази покана ще изтече на: **{{ $expiresAt }}**
 
-If you have any questions, please contact your building administrator.
+Ако имате въпроси, моля, свържете се с администратора на сградата.
 
-Thanks,<br>
+Поздрави,<br>
 {{ config('app.name') }}
 </x-mail::message>

@@ -38,6 +38,16 @@ Route::get('readings/submit-multiple', App\Livewire\Resident\SubmitMultipleReadi
 Route::get('meters/add', App\Livewire\Resident\AddWaterMeter::class)
     ->middleware(['auth', 'verified'])
     ->name('meters.add');
+    
+// Edit water meter
+Route::get('meters/edit/{meterId}', App\Livewire\Resident\EditWaterMeter::class)
+    ->middleware(['auth', 'verified'])
+    ->name('meters.edit');
+    
+// List water meters
+Route::get('meters/list', App\Livewire\Resident\WaterMetersList::class)
+    ->middleware(['auth', 'verified'])
+    ->name('meters.list');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');

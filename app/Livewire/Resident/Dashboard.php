@@ -16,19 +16,10 @@ class Dashboard extends Component
         // Get apartments associated with this user
         $apartments = $user->apartments;
         
-        // Get all water meters for these apartments that are approved or don't have a status field yet
+        // Get all water meters for these apartments
         $waterMeters = WaterMeter::whereIn('apartment_id', $apartments->pluck('id'))
-            ->where(function($query) {
-                $query->where('status', 'approved')
-                      ->orWhereNull('status'); // For backward compatibility with existing records
-            })
             ->with(['apartment', 'latestReading'])
             ->get();
-            
-        // Get pending meters for notification
-        $pendingMeters = WaterMeter::whereIn('apartment_id', $apartments->pluck('id'))
-            ->where('status', 'pending')
-            ->count();
             
         // Group water meters by apartment
         $metersByApartment = $waterMeters->groupBy('apartment_id');
@@ -36,7 +27,6 @@ class Dashboard extends Component
         return view('livewire.resident.dashboard', [
             'apartments' => $apartments,
             'metersByApartment' => $metersByApartment,
-            'pendingMeters' => $pendingMeters,
         ]);
     }
 }

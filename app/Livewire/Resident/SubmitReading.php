@@ -45,7 +45,7 @@ class SubmitReading extends Component
             
         if (!$this->waterMeter) {
             // Handle unauthorized access to meter
-            session()->flash('error', 'You do not have access to this water meter.');
+            session()->flash('error', __('You do not have access to this water meter.'));
             return redirect()->route('dashboard');
         }
         
@@ -81,12 +81,11 @@ class SubmitReading extends Component
         $reading->user_id = Auth::id();
         $reading->reading_date = Carbon::parse($this->readingDate);
         $reading->value = $this->value;
-        $reading->status = 'pending';
         $reading->notes = $this->notes;
         $reading->photo_path = $photoPath;
         $reading->save();
         
-        session()->flash('success', 'Reading submitted successfully and is pending approval.');
+        session()->flash('success', __('Reading submitted successfully.'));
         return redirect()->route('dashboard');
     }
     

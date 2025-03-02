@@ -57,4 +57,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
 
+// Impersonation routes
+Route::impersonate();
+
 require __DIR__.'/auth.php';

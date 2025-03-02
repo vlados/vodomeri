@@ -17,6 +17,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Stechstudio\FilamentImpersonate\ImpersonatePlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -38,6 +39,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+            ])
+            ->plugins([
             ])
             ->middleware([
                 EncryptCookies::class,

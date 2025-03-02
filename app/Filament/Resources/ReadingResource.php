@@ -31,6 +31,10 @@ class ReadingResource extends Resource
                 Forms\Components\Select::make('water_meter_id')
                     ->relationship('waterMeter', function ($query) {
                         return $query->with('apartment')->get()->mapWithKeys(function ($meter) {
+                            if ($meter->isCentral()) {
+                                return [$meter->id => "Central Building Meter ({$meter->serial_number})"];
+                            }
+
                             $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
                             return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water ({$meter->serial_number})"];
                         });
@@ -129,6 +133,10 @@ class ReadingResource extends Resource
                 Tables\Filters\SelectFilter::make('water_meter_id')
                     ->relationship('waterMeter', function ($query) {
                         return $query->with('apartment')->get()->mapWithKeys(function ($meter) {
+                            if ($meter->isCentral()) {
+                                return [$meter->id => "Central Building Meter"];
+                            }
+                            
                             $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
                             return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water"];
                         });

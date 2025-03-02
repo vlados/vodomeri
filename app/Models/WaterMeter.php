@@ -20,6 +20,14 @@ class WaterMeter extends Model
         'initial_reading',
     ];
     
+    /**
+     * Whether this meter is a central building meter
+     */
+    public function isCentral(): bool
+    {
+        return $this->type === 'central';
+    }
+    
     protected $casts = [
         'installation_date' => 'date',
         'initial_reading' => 'decimal:3',

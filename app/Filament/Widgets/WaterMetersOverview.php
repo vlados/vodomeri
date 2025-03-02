@@ -14,7 +14,6 @@ class WaterMetersOverview extends BaseWidget
     {
         $totalMeters = WaterMeter::count();
         $totalApartments = Apartment::count();
-        $pendingReadings = Reading::where('status', 'pending')->count();
         $totalReadingsThisMonth = Reading::whereMonth('reading_date', now()->month)
             ->whereYear('reading_date', now()->year)
             ->count();
@@ -29,11 +28,6 @@ class WaterMetersOverview extends BaseWidget
                 ->description('Total registered meters')
                 ->descriptionIcon('heroicon-m-beaker')
                 ->color('success'),
-                
-            Stat::make('Pending Readings', $pendingReadings)
-                ->description('Readings awaiting approval')
-                ->descriptionIcon('heroicon-m-clipboard-document-list')
-                ->color('warning'),
                 
             Stat::make('This Month\'s Readings', $totalReadingsThisMonth)
                 ->description('Readings submitted this month')

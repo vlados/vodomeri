@@ -15,14 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
+            ApartmentSeeder::class,
+            UserSeeder::class,         // Now calling our new UserSeeder
+            WaterMeterAndReadingSeeder::class,
         ]);
-        
-        // Create a test user with resident role
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-        
-        $user->assignRole('resident');
     }
 }

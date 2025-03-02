@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Enums\FiltersLayout;
 
 class WaterMeterResource extends Resource
 {
@@ -28,9 +29,15 @@ class WaterMeterResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('apartment_id')
-                    ->relationship('apartment', 'number')
-                    ->required()
-                    ->searchable(),
+                    ->relationship(
+                        'apartment',
+                        'number',
+                        fn (Builder $query) => $query->orderBy('floor')->orderBy('number')
+                    )
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "Floor {$record->floor}, Apt {$record->number}")
+                    ->required(fn (callable $get) => $get('type') !== 'central')
+                    ->searchable()
+                    ->visible(fn (callable $get) => $get('type') !== 'central'),
                 Forms\Components\TextInput::make('serial_number')
                     ->required()
                     ->maxLength(255),
@@ -39,7 +46,9 @@ class WaterMeterResource extends Resource
                     ->options([
                         'hot' => 'Hot Water',
                         'cold' => 'Cold Water',
-                    ]),
+                        'central' => 'Central Building Meter',
+                    ])
+                    ->reactive(),
                 Forms\Components\TextInput::make('location')
                     ->maxLength(255),
                 Forms\Components\DatePicker::make('installation_date'),
@@ -55,8 +64,19 @@ class WaterMeterResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('apartment.number')
+                Tables\Columns\TextColumn::make('apartment.id')
                     ->label('Apartment')
+                    ->formatStateUsing(function ($state, WaterMeter $record) {
+                        if ($record->isCentral()) {
+                            return 'Central Meter';
+                        }
+                        
+                        if ($record->apartment) {
+                            return "Floor {$record->apartment->floor}, Apt {$record->apartment->number}";
+                        }
+                        
+                        return '';
+                    })
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('serial_number')
@@ -66,6 +86,13 @@ class WaterMeterResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'hot' => 'danger',
                         'cold' => 'info',
+                        'central' => 'success',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match($state) {
+                        'hot' => 'Hot Water',
+                        'cold' => 'Cold Water',
+                        'central' => 'Central Building Meter',
+                        default => $state,
                     })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
@@ -86,8 +113,24 @@ class WaterMeterResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                Tables\Filters\SelectFilter::make('apartment_id')
+                    ->relationship(
+                        'apartment',
+                        'number',
+                        fn (Builder $query) => $query->orderBy('floor')->orderBy('number')
+                    )
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "Етаж {$record->floor}, {$record->number}")
+                    ->preload()
+                    ->label('Апартамент')
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('type')
+                    ->options([
+                        'hot' => 'Hot Water',
+                        'cold' => 'Cold Water',
+                        'central' => 'Central Building Meter',
+                    ])
+                    ->label('Meter Type')
+                ], layout: FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

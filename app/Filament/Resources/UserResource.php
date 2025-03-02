@@ -14,10 +14,20 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use STS\FilamentImpersonate\Tables\Actions\Impersonate;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+    
+    protected static ?string $recordTitleAttribute = 'name';
+    
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['apartments.waterMeters', 'roles'])
+            ->withCount('apartments');
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
     
@@ -69,6 +79,15 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('roles.name')
                     ->badge()
                     ->label('Roles'),
+                Tables\Columns\TextColumn::make('apartments_count')
+                    ->label('Apartments')
+                    ->counts('apartments')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('water_meters_count')
+                    ->label('Water Meters')
+                    ->getStateUsing(function (User $record) {
+                        return $record->apartments->flatMap->waterMeters->count();
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -89,6 +108,7 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Impersonate::make()->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

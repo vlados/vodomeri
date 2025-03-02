@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Lab404\Impersonate\Models\Impersonate;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, Impersonate;
 
     /**
      * The attributes that are mass assignable.
@@ -78,5 +79,23 @@ class User extends Authenticatable implements MustVerifyEmail
     public function readings(): HasMany
     {
         return $this->hasMany(Reading::class);
+    }
+    
+    /**
+     * Check if the user can impersonate other users
+     * Only users with the admin role can impersonate
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->hasRole('admin');
+    }
+    
+    /**
+     * Check if the user can be impersonated
+     * Admin users cannot be impersonated
+     */
+    public function canBeImpersonated(): bool
+    {
+        return !$this->hasRole('admin');
     }
 }

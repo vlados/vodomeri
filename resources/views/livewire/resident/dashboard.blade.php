@@ -1,8 +1,8 @@
 <div>
     <div class="grid grid-cols-1 gap-10">
         <!-- Header with actions -->
-        <div class="flex justify-between items-center w-full">
-            <div class="flex space-x-2">
+        <div class="sm:flex sm:justify-between sm:items-center w-full grid grid-cols-2 gap-4">
+            <div class="flex space-x-2 col-span-2">
                 @if($apartments->count() > 1)
                 <flux:select variant="listbox" class="sm:max-w-fit" wire:model.live="selectedApartmentId">
                     <x-slot name="trigger">
@@ -32,9 +32,11 @@
                 </flux:select>
             </div>
 
-            <div class="flex space-x-2 ml-2">
-                <flux:button href="{{ route('meters.add') }}" icon="plus" size="sm">Нов водомер</flux:button>
-                <flux:button href="{{ route('readings.multiple') }}" icon="pencil-square" size="sm" variant="primary">Самоотчет</flux:button>
+            <div class="col-span-1 w-full">
+                <flux:button href="{{ route('meters.add') }}" icon="plus" size="sm" class="w-full justify-center sm:w-auto sm:justify-start">Нов водомер</flux:button>
+            </div>
+            <div class="col-span-1 w-full ml-auto flex justify-end">
+                <flux:button href="{{ route('readings.multiple') }}" icon="pencil-square" size="sm" variant="primary" class="w-full justify-center sm:w-auto sm:justify-start">Самоотчет</flux:button>
             </div>
         </div>
         <div class="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -135,7 +137,7 @@
                                         </svg>
                                     </span>
                                     @elseif($reading['status'] === 'partial')
-                                    <flux:tooltip content="Подадени са само {{ $reading['submitted'] }} показания от {{ $reading['total'] }}">
+                                    <flux:tooltip content="Подадени ">
                                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
                                         <span class="text-xs font-medium text-yellow-800">{{ $reading['submitted'] }}/{{ $reading['total'] }}</span>
                                     </span>

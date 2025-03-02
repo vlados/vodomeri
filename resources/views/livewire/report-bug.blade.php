@@ -1,4 +1,4 @@
-<div>
+<div class="max-lg:hidden">
     <flux:navlist variant="outline">
         <flux:navlist.item icon="bug-ant" wire:click="openModal" >
         Докладвай проблем

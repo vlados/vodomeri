@@ -78,23 +78,41 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group heading="Platform">
-                    <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                    {{ __('Dashboard') }}
+                <flux:navlist.group heading="Меню">
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                    {{ __('Начало') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="list-bullet" :href="route('meters.list')" :current="request()->routeIs('meters.list')" wire:navigate>
+                    {{ __('Водомери') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="document-text" :href="route('readings.multiple')" :current="request()->routeIs('readings.multiple')" wire:navigate>
+                    {{ __('Самоотчет') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('readings.history')" :current="request()->routeIs('readings.history')" wire:navigate>
+                    {{ __('История') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />
+            
+            <!-- Mobile Bug Report Button -->
+            <div class="px-3 py-2">
+                @livewire('report-bug')
+            </div>
 
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item>
+                <flux:navlist.group heading="Профил">
+                    <flux:navlist.item icon="cog" href="/settings/profile" wire:navigate>
+                    {{ __('Settings') }}
+                    </flux:navlist.item>
+                    <form method="POST" action="{{ route('logout') }}" class="w-full">
+                        @csrf
+                        <flux:navlist.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
+                            {{ __('Log Out') }}
+                        </flux:navlist.item>
+                    </form>
+                </flux:navlist.group>
             </flux:navlist>
         </flux:sidebar>
 

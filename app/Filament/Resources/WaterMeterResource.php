@@ -35,9 +35,9 @@ class WaterMeterResource extends Resource
                         fn (Builder $query) => $query->orderBy('floor')->orderBy('number')
                     )
                     ->getOptionLabelFromRecordUsing(fn ($record) => "Floor {$record->floor}, Apt {$record->number}")
-                    ->required(fn (callable $get) => $get('type') !== 'central')
+                    ->required(fn (callable $get) => !in_array($get('type'), ['central-hot', 'central-cold']))
                     ->searchable()
-                    ->visible(fn (callable $get) => $get('type') !== 'central'),
+                    ->visible(fn (callable $get) => !in_array($get('type'), ['central-hot', 'central-cold'])),
                 Forms\Components\TextInput::make('serial_number')
                     ->required()
                     ->maxLength(255),
@@ -46,7 +46,8 @@ class WaterMeterResource extends Resource
                     ->options([
                         'hot' => 'Hot Water',
                         'cold' => 'Cold Water',
-                        'central' => 'Central Building Meter',
+                        'central-hot' => 'Central Hot Water Meter',
+                        'central-cold' => 'Central Cold Water Meter',
                     ])
                     ->reactive(),
                 Forms\Components\TextInput::make('location')
@@ -67,8 +68,12 @@ class WaterMeterResource extends Resource
                 Tables\Columns\TextColumn::make('apartment.id')
                     ->label('Apartment')
                     ->formatStateUsing(function ($state, WaterMeter $record) {
-                        if ($record->isCentral()) {
-                            return 'Central Meter';
+                        if ($record->isCentralHot()) {
+                            return 'Central Hot Water Meter';
+                        }
+                        
+                        if ($record->isCentralCold()) {
+                            return 'Central Cold Water Meter';
                         }
                         
                         if ($record->apartment) {
@@ -86,12 +91,14 @@ class WaterMeterResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'hot' => 'danger',
                         'cold' => 'info',
-                        'central' => 'success',
+                        'central-hot' => 'danger',
+                        'central-cold' => 'info',
                     })
                     ->formatStateUsing(fn (string $state): string => match($state) {
                         'hot' => 'Hot Water',
                         'cold' => 'Cold Water',
-                        'central' => 'Central Building Meter',
+                        'central-hot' => 'Central Hot Water',
+                        'central-cold' => 'Central Cold Water',
                         default => $state,
                     })
                     ->searchable(),
@@ -127,7 +134,8 @@ class WaterMeterResource extends Resource
                     ->options([
                         'hot' => 'Hot Water',
                         'cold' => 'Cold Water',
-                        'central' => 'Central Building Meter',
+                        'central-hot' => 'Central Hot Water',
+                        'central-cold' => 'Central Cold Water',
                     ])
                     ->label('Meter Type')
                 ], layout: FiltersLayout::AboveContent)

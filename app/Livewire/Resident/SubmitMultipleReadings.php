@@ -83,8 +83,15 @@ class SubmitMultipleReadings extends Component
             // All meters must have a reading value
             $rules["meters.{$index}.value"] = "required|numeric|min:{$meter['previous_value']}";
             
-            // Photo is optional but must be an image if provided
-            $rules["meters.{$index}.photo"] = "nullable|image|max:5120";
+            // Determine if this is the first reading (no previous reading)
+            $isFirstReading = $meter['previous_date'] === 'Initial';
+            
+            // Photo is required for first readings, optional for subsequent readings
+            if ($isFirstReading) {
+                $rules["meters.{$index}.photo"] = "required|image|max:5120";
+            } else {
+                $rules["meters.{$index}.photo"] = "nullable|image|max:5120";
+            }
         }
         
         return $rules;
@@ -111,6 +118,7 @@ class SubmitMultipleReadings extends Component
             $messages["meters.{$index}.value.numeric"] = "Показанието трябва да бъде число.";
             $messages["meters.{$index}.value.min"] = "Показанието трябва да бъде по-голямо или равно на предишното показание ({$meter['previous_value']} m³).";
             
+            $messages["meters.{$index}.photo.required"] = "Снимката е задължителна за първо отчитане на водомера.";
             $messages["meters.{$index}.photo.image"] = "Снимката трябва да бъде изображение.";
             $messages["meters.{$index}.photo.max"] = "Снимката не може да бъде по-голяма от 5MB.";
         }

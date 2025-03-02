@@ -14,7 +14,7 @@ class WaterMeterAndReadingSeeder extends Seeder
     // Store monthly cold water consumption for all apartments
     private $monthlyApartmentConsumption = [];
     // Water meter types
-    const METER_TYPES = ['hot', 'cold', 'central'];
+    const METER_TYPES = ['hot', 'cold', 'central-hot', 'central-cold'];
     
     // Possible locations for water meters
     const LOCATIONS = [
@@ -30,14 +30,16 @@ class WaterMeterAndReadingSeeder extends Seeder
     const SERIAL_PREFIXES = [
         'hot' => ['HT', 'TW', 'HTW'],
         'cold' => ['CW', 'CLD', 'WM'],
-        'central' => ['MN', 'BLD', 'CTR'],
+        'central-hot' => ['MNH', 'BLDH', 'CTRH'],
+        'central-cold' => ['MNC', 'BLDC', 'CTRC'],
     ];
     
     // Consumption ranges in cubic meters per month (min, max)
     const CONSUMPTION_RANGES = [
         'hot' => [0.5, 2.0],
         'cold' => [1.0, 3.5],
-        'central' => [50.0, 90.0], // Building-wide consumption
+        'central-hot' => [20.0, 40.0], // Building-wide hot water consumption
+        'central-cold' => [50.0, 90.0], // Building-wide cold water consumption
     ];
     
     // Water loss percentage range (min, max)
@@ -66,20 +68,24 @@ class WaterMeterAndReadingSeeder extends Seeder
             $this->generateMetersForApartment($apartment, $adminUser);
         }
         
-        // Create a central building water meter with water loss
+        // Create central building water meters with water loss
         // Do this AFTER generating apartment meters so we can add water loss
-        $this->createCentralWaterMeter($adminUser);
+        $this->createCentralWaterMeter($adminUser, 'central-hot');
+        $this->createCentralWaterMeter($adminUser, 'central-cold');
         
         $this->command->info('Generated water meters and readings with realistic water loss');
     }
     
     /**
      * Create a central water meter for the building and generate readings
+     * 
+     * @param User $user The user to associate with the readings
+     * @param string $type The type of central meter ('central-hot' or 'central-cold')
      */
-    private function createCentralWaterMeter(User $user): void
+    private function createCentralWaterMeter(User $user, string $type): void
     {
         // Generate a unique serial number for the central meter
-        $prefix = self::SERIAL_PREFIXES['central'][array_rand(self::SERIAL_PREFIXES['central'])];
+        $prefix = self::SERIAL_PREFIXES[$type][array_rand(self::SERIAL_PREFIXES[$type])];
         $serialNumber = $prefix . rand(100000, 999999);
         
         // Set installation date to 5 years ago
@@ -88,12 +94,17 @@ class WaterMeterAndReadingSeeder extends Seeder
         // Initial reading for the central meter (higher value)
         $initialReading = rand(1000, 5000);
         
+        // Location label based on type
+        $locationLabel = $type === 'central-hot' 
+            ? 'Входно фоайе - Главен водомер за топла вода' 
+            : 'Входно фоайе - Главен водомер за студена вода';
+        
         // Create the central water meter
         $waterMeter = new WaterMeter();
         $waterMeter->apartment_id = null; // Central meter is not tied to an apartment
         $waterMeter->serial_number = $serialNumber;
-        $waterMeter->type = 'central';
-        $waterMeter->location = 'Входно фоайе - Главен водомер на сградата';
+        $waterMeter->type = $type;
+        $waterMeter->location = $locationLabel;
         $waterMeter->installation_date = $installationDate;
         $waterMeter->initial_reading = $initialReading;
         $waterMeter->save();
@@ -136,7 +147,14 @@ class WaterMeterAndReadingSeeder extends Seeder
             }
             
             // The central meter should show apartment consumption plus water loss
-            $consumption = $apartmentConsumption + $waterLoss;
+            // For hot water meters, we'll use a fraction of the cold water consumption
+            if ($waterMeter->type === 'central-hot') {
+                // Hot water is typically 30-50% of total water usage
+                $hotWaterFactor = rand(30, 50) / 100;
+                $consumption = ($apartmentConsumption * $hotWaterFactor) + $waterLoss;
+            } else {
+                $consumption = $apartmentConsumption + $waterLoss;
+            }
             
             // For older readings, add more randomness to water loss (1-10 m³)
             $monthsAgo = $currentDate->diffInMonths($startDate);
@@ -166,7 +184,8 @@ class WaterMeterAndReadingSeeder extends Seeder
             
             // Add water loss info to the notes
             $lossPercentFormatted = round($lossPercentage * 100, 1);
-            $reading->notes = "Отчет на главен водомер за " . $readingDate->format('F Y') . 
+            $meterTypeLabel = $waterMeter->type === 'central-hot' ? 'топла вода' : 'студена вода';
+            $reading->notes = "Отчет на главен водомер за {$meterTypeLabel} за " . $readingDate->format('F Y') . 
                               ". Загуби: {$lossPercentFormatted}% (примерно " . round($waterLoss, 2) . " m³)";
             
             $reading->save();

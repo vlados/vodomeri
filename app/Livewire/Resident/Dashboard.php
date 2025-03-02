@@ -156,15 +156,16 @@ class Dashboard extends Component
                 'label' => $currentDate->format('M Y'),
                 'year' => $currentDate->year,
                 'month' => $currentDate->month,
-                'water_loss' => 0
+                'cold_water_loss' => 0,
+                'hot_water_loss' => 0
             ];
             $currentDate->addMonth();
         }
         
-        // Get central meter readings (only cold water)
-        $centralMeters = WaterMeter::where('type', 'central')->pluck('id');
+        // Get central cold water meter readings
+        $centralColdMeters = WaterMeter::where('type', 'central-cold')->pluck('id');
         
-        $centralReadings = Reading::whereIn('water_meter_id', $centralMeters)
+        $centralColdReadings = Reading::whereIn('water_meter_id', $centralColdMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
                 DB::raw('EXTRACT(YEAR FROM readings.reading_date) as year'),
@@ -176,12 +177,44 @@ class Dashboard extends Component
             ->orderBy('month')
             ->get();
         
-        // Get apartment meter readings (only cold water)
-        $apartmentMeters = WaterMeter::whereNotIn('id', $centralMeters)
-            ->where('type', 'cold')
+        // Get central hot water meter readings
+        $centralHotMeters = WaterMeter::where('type', 'central-hot')->pluck('id');
+        
+        $centralHotReadings = Reading::whereIn('water_meter_id', $centralHotMeters)
+            ->where('reading_date', '>=', $startDate)
+            ->select(
+                DB::raw('EXTRACT(YEAR FROM readings.reading_date) as year'),
+                DB::raw('EXTRACT(MONTH FROM readings.reading_date) as month'),
+                DB::raw('SUM(readings.consumption) as total_consumption')
+            )
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+        
+        // Get apartment cold water meter readings
+        $apartmentColdMeters = WaterMeter::where('type', 'cold')
+            ->whereNotNull('apartment_id')
             ->pluck('id');
         
-        $apartmentReadings = Reading::whereIn('water_meter_id', $apartmentMeters)
+        $apartmentColdReadings = Reading::whereIn('water_meter_id', $apartmentColdMeters)
+            ->where('reading_date', '>=', $startDate)
+            ->select(
+                DB::raw('EXTRACT(YEAR FROM readings.reading_date) as year'),
+                DB::raw('EXTRACT(MONTH FROM readings.reading_date) as month'),
+                DB::raw('SUM(readings.consumption) as total_consumption')
+            )
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+        
+        // Get apartment hot water meter readings
+        $apartmentHotMeters = WaterMeter::where('type', 'hot')
+            ->whereNotNull('apartment_id')
+            ->pluck('id');
+        
+        $apartmentHotReadings = Reading::whereIn('water_meter_id', $apartmentHotMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
                 DB::raw('EXTRACT(YEAR FROM readings.reading_date) as year'),
@@ -198,23 +231,41 @@ class Dashboard extends Component
             $year = $monthData['year'];
             $month = $monthData['month'];
             
-            // Get central meter readings for this month (cold water only)
-            $centralReading = $centralReadings->first(function ($reading) use ($year, $month) {
+            // Get central cold meter readings for this month
+            $centralColdReading = $centralColdReadings->first(function ($reading) use ($year, $month) {
                 return (int)$reading->year === $year && 
                        (int)$reading->month === $month;
             });
             
-            // Get apartment meter readings for this month (cold water only)
-            $apartmentReading = $apartmentReadings->first(function ($reading) use ($year, $month) {
+            // Get apartment cold meter readings for this month
+            $apartmentColdReading = $apartmentColdReadings->first(function ($reading) use ($year, $month) {
                 return (int)$reading->year === $year && 
                        (int)$reading->month === $month;
             });
             
-            // Calculate water loss (cold water only)
-            $centralValue = $centralReading ? (float)$centralReading->total_consumption : 0;
-            $apartmentValue = $apartmentReading ? (float)$apartmentReading->total_consumption : 0;
+            // Calculate cold water loss
+            $centralColdValue = $centralColdReading ? (float)$centralColdReading->total_consumption : 0;
+            $apartmentColdValue = $apartmentColdReading ? (float)$apartmentColdReading->total_consumption : 0;
             
-            $monthData['water_loss'] = max(0, $centralValue - $apartmentValue);
+            $monthData['cold_water_loss'] = max(0, $centralColdValue - $apartmentColdValue);
+            
+            // Get central hot meter readings for this month
+            $centralHotReading = $centralHotReadings->first(function ($reading) use ($year, $month) {
+                return (int)$reading->year === $year && 
+                       (int)$reading->month === $month;
+            });
+            
+            // Get apartment hot meter readings for this month
+            $apartmentHotReading = $apartmentHotReadings->first(function ($reading) use ($year, $month) {
+                return (int)$reading->year === $year && 
+                       (int)$reading->month === $month;
+            });
+            
+            // Calculate hot water loss
+            $centralHotValue = $centralHotReading ? (float)$centralHotReading->total_consumption : 0;
+            $apartmentHotValue = $apartmentHotReading ? (float)$apartmentHotReading->total_consumption : 0;
+            
+            $monthData['hot_water_loss'] = max(0, $centralHotValue - $apartmentHotValue);
         }
         
         // Format data for FluxUI chart
@@ -223,7 +274,8 @@ class Dashboard extends Component
         foreach ($months as $month) {
             $chartData[] = [
                 'date' => $month['label'],
-                'water_loss' => $month['water_loss']
+                'cold_water_loss' => $month['cold_water_loss'],
+                'hot_water_loss' => $month['hot_water_loss']
             ];
         }
         
@@ -243,9 +295,11 @@ class Dashboard extends Component
     public function getMaxWaterLossValue()
     {
         $waterLossData = $this->getWaterLossData();
-        $allValues = collect($waterLossData)->pluck('water_loss');
+        $allValues = collect($waterLossData)->flatMap(function ($item) {
+            return [$item['cold_water_loss'], $item['hot_water_loss']];
+        });
             
-        return $allValues->max(); // Add 20% padding to the max value
+        return $allValues->max(); // Return the maximum value
     }
     
     public function getApartmentReadingsTable()

@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Collection;
 
 class SubmitMultipleReadings extends Component
 {
@@ -16,7 +17,7 @@ class SubmitMultipleReadings extends Component
     public $readingDate;
     public $meters = [];
     public $selectedApartmentId = null;
-    public $apartments = [];
+    public array|Collection $apartments = [];
     
     public function mount()
     {
@@ -66,37 +67,86 @@ class SubmitMultipleReadings extends Component
         $this->loadMeters();
     }
     
-    public function submit()
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     */
+    protected function rules(): array
     {
-        // Validate date
-        $this->validate([
+        $rules = [
             'readingDate' => 'required|date|before_or_equal:today',
-        ]);
+        ];
         
-        // Validate each meter reading
-        $validationRules = [];
-        $validationMessages = [];
-        
+        // Require readings for all meters
         foreach ($this->meters as $index => $meter) {
-            if (!empty($meter['value'])) {
-                $validationRules["meters.{$index}.value"] = "required|numeric|min:{$meter['previous_value']}";
-                $validationMessages["meters.{$index}.value.min"] = "The reading must be greater than or equal to the previous reading ({$meter['previous_value']} m³).";
-            }
+            // All meters must have a reading value
+            $rules["meters.{$index}.value"] = "required|numeric|min:{$meter['previous_value']}";
             
-            if (!empty($meter['photo'])) {
-                $validationRules["meters.{$index}.photo"] = "nullable|image|max:5120";
-            }
+            // Photo is optional but must be an image if provided
+            $rules["meters.{$index}.photo"] = "nullable|image|max:5120";
         }
         
-        $this->validate($validationRules, $validationMessages);
+        return $rules;
+    }
+    
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        $messages = [
+            'readingDate.required' => 'Моля, въведете дата на отчитане.',
+            'readingDate.date' => 'Датата на отчитане трябва да бъде валидна дата.',
+            'readingDate.before_or_equal' => 'Датата на отчитане не може да бъде в бъдещето.',
+        ];
         
-        // Save readings for each meter that has a value
+        foreach ($this->meters as $index => $meter) {
+            $meterType = $meter['type'] === 'hot' ? 'Топла' : 'Студена';
+            $location = $meter['location'] ? " ({$meter['location']})" : '';
+            
+            $messages["meters.{$index}.value.required"] = "Моля, въведете показание.";
+            $messages["meters.{$index}.value.numeric"] = "Показанието трябва да бъде число.";
+            $messages["meters.{$index}.value.min"] = "Показанието трябва да бъде по-голямо или равно на предишното показание ({$meter['previous_value']} m³).";
+            
+            $messages["meters.{$index}.photo.image"] = "Снимката трябва да бъде изображение.";
+            $messages["meters.{$index}.photo.max"] = "Снимката не може да бъде по-голяма от 5MB.";
+        }
+        
+        return $messages;
+    }
+    
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        $attributes = [
+            'readingDate' => 'дата на отчитане',
+        ];
+        
+        foreach ($this->meters as $index => $meter) {
+            $meterType = $meter['type'] === 'hot' ? 'Топла' : 'Студена';
+            $location = $meter['location'] ? " ({$meter['location']})" : '';
+            $attributes["meters.{$index}.value"] = "показание на {$meterType} вода{$location}";
+            $attributes["meters.{$index}.photo"] = "снимка на {$meterType} вода{$location}";
+        }
+        
+        return $attributes;
+    }
+    
+    public function submit()
+    {
+        $this->validate();
+        
+        // Save readings for each meter
         $readingsSubmitted = 0;
         
         foreach ($this->meters as $meterData) {
-            if (empty($meterData['value'])) {
-                continue;
-            }
             
             // Handle photo upload if provided
             $photoPath = null;

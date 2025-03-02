@@ -11,6 +11,8 @@ use Illuminate\Database\Seeder;
 
 class WaterMeterAndReadingSeeder extends Seeder
 {
+    // Store monthly cold water consumption for all apartments
+    private $monthlyApartmentConsumption = [];
     // Water meter types
     const METER_TYPES = ['hot', 'cold', 'central'];
     
@@ -38,6 +40,9 @@ class WaterMeterAndReadingSeeder extends Seeder
         'central' => [50.0, 90.0], // Building-wide consumption
     ];
     
+    // Water loss percentage range (min, max)
+    const WATER_LOSS_PERCENTAGE = [5, 15]; // 5-15% water loss
+    
     /**
      * Run the database seeds.
      */
@@ -56,13 +61,16 @@ class WaterMeterAndReadingSeeder extends Seeder
             $adminUser->assignRole('admin');
         }
         
-        // Create a central building water meter
-        $this->createCentralWaterMeter($adminUser);
-        
-        // Generate meters and readings for each apartment
+        // Generate meters and readings for each apartment first
         foreach ($apartments as $apartment) {
             $this->generateMetersForApartment($apartment, $adminUser);
         }
+        
+        // Create a central building water meter with water loss
+        // Do this AFTER generating apartment meters so we can add water loss
+        $this->createCentralWaterMeter($adminUser);
+        
+        $this->command->info('Generated water meters and readings with realistic water loss');
     }
     
     /**
@@ -108,8 +116,34 @@ class WaterMeterAndReadingSeeder extends Seeder
         
         // Generate a reading for each month
         while ($startDate <= $currentDate) {
-            // Random consumption based on meter type
-            $consumption = $this->getRandomConsumption($waterMeter->type);
+            $monthKey = $startDate->format('Y-m');
+            
+            // Get the total cold water consumption from all apartments for this month
+            $apartmentConsumption = $this->monthlyApartmentConsumption[$monthKey] ?? 0;
+            
+            // Add water loss - random percentage between min and max values
+            $lossPercentage = rand(
+                self::WATER_LOSS_PERCENTAGE[0] * 10, 
+                self::WATER_LOSS_PERCENTAGE[1] * 10
+            ) / 1000; // Convert to decimal (e.g., 7.5% -> 0.075)
+            
+            // Calculate water loss amount
+            $waterLoss = $apartmentConsumption * $lossPercentage;
+            
+            // Ensure some water loss even if no apartment consumption
+            if ($apartmentConsumption === 0 || $waterLoss < 0.5) {
+                $waterLoss = rand(50, 150) / 100; // Random 0.5-1.5 m³
+            }
+            
+            // The central meter should show apartment consumption plus water loss
+            $consumption = $apartmentConsumption + $waterLoss;
+            
+            // For older readings, add more randomness to water loss (1-10 m³)
+            $monthsAgo = $currentDate->diffInMonths($startDate);
+            if ($monthsAgo > 12) {
+                $extraRandomness = rand(100, 1000) / 100; // 1-10 m³
+                $consumption += $extraRandomness;
+            }
             
             // Add consumption to current value
             $currentValue += $consumption;
@@ -129,7 +163,12 @@ class WaterMeterAndReadingSeeder extends Seeder
             $reading->user_id = $user->id;
             $reading->reading_date = $readingDate;
             $reading->value = round($currentValue, 3);
-            $reading->notes = "Отчет на главен водомер за " . $readingDate->format('F Y');
+            
+            // Add water loss info to the notes
+            $lossPercentFormatted = round($lossPercentage * 100, 1);
+            $reading->notes = "Отчет на главен водомер за " . $readingDate->format('F Y') . 
+                              ". Загуби: {$lossPercentFormatted}% (примерно " . round($waterLoss, 2) . " m³)";
+            
             $reading->save();
             
             // Move to next month
@@ -195,8 +234,8 @@ class WaterMeterAndReadingSeeder extends Seeder
      */
     private function generateReadings(WaterMeter $waterMeter, User $user, float $initialValue): void
     {
-        // Start from 12 months ago
-        $startDate = Carbon::now()->subMonths(12)->startOfMonth();
+        // Start from 24 months ago (same as central meter)
+        $startDate = Carbon::now()->subMonths(24)->startOfMonth();
         $currentDate = Carbon::now()->startOfMonth();
         
         // Initial reading value
@@ -204,30 +243,80 @@ class WaterMeterAndReadingSeeder extends Seeder
         
         // Generate a reading for each month
         while ($startDate <= $currentDate) {
-            // Random consumption based on meter type
-            $consumption = $this->getRandomConsumption($waterMeter->type);
+            $monthKey = $startDate->format('Y-m');
+            $apartmentId = $waterMeter->apartment_id;
             
-            // Add consumption to current value
-            $currentValue += $consumption;
+            // Randomly skip some readings to simulate incomplete data
+            // For apartments with odd floor numbers, 40% chance of missing a reading including recent months
+            // For apartments with even floor numbers, 20% chance of missing readings, but not in the latest month
+            $monthsAgo = $currentDate->diffInMonths($startDate);
+            $isLastMonth = $monthsAgo === 0;
+            $apartmentFloor = $waterMeter->apartment->floor ?? 0;
             
-            // Reading date is random day in the month (1-28)
-            $readingDate = Carbon::create(
-                $startDate->year,
-                $startDate->month,
-                rand(1, 28),
-                rand(8, 20), // Random hour between 8 AM and 8 PM
-                rand(0, 59)  // Random minute
-            );
+            // Add more variation to the data
+            // Hot water meters have a higher chance of missing readings
+            // Cold water meters on odd floors have higher chance of missing
+            // Some meters have perfect records
+            if ($waterMeter->type === 'hot' && $waterMeter->id % 3 === 0) {
+                $skipReading = rand(1, 100) <= 60; // 60% chance of missing for some hot meters
+            } else if ($waterMeter->type === 'hot') {
+                $skipReading = rand(1, 100) <= 30; // 30% chance of missing for other hot meters
+            } else if ($apartmentFloor % 2 === 1) { // Odd floor cold water
+                $skipReading = rand(1, 100) <= 25; // 25% chance of missing for cold meters on odd floors
+            } else if ($waterMeter->id % 5 === 0) {
+                $skipReading = false; // Some meters have perfect records (every 5th ID)
+            } else { 
+                $skipReading = rand(1, 100) <= 20 && !$isLastMonth; // Regular pattern
+            }
             
-            // Create the reading with approved status
-            $reading = new Reading();
-            $reading->water_meter_id = $waterMeter->id;
-            $reading->user_id = $user->id;
-            $reading->reading_date = $readingDate;
-            $reading->value = round($currentValue, 3);
-            // Status field has been removed in a migration, so don't set it
-            $reading->notes = $this->getRandomNote($readingDate);
-            $reading->save();
+            if (!$skipReading) {
+                // Random consumption based on meter type
+                $consumption = $this->getRandomConsumption($waterMeter->type);
+                
+                // Add consumption to current value
+                $currentValue += $consumption;
+                
+                // Reading date is random day in the month (1-28)
+                $readingDate = Carbon::create(
+                    $startDate->year,
+                    $startDate->month,
+                    rand(1, 28),
+                    rand(8, 20), // Random hour between 8 AM and 8 PM
+                    rand(0, 59)  // Random minute
+                );
+                
+                // Create the reading with approved status
+                $reading = new Reading();
+                $reading->water_meter_id = $waterMeter->id;
+                $reading->user_id = $user->id;
+                $reading->reading_date = $readingDate;
+                $reading->value = round($currentValue, 3);
+                $reading->notes = $this->getRandomNote($readingDate);
+                $reading->save();
+                
+                // Track cold water consumption for each apartment by month
+                if ($waterMeter->type === 'cold' && $apartmentId) {
+                    if (!isset($this->monthlyApartmentConsumption[$monthKey])) {
+                        $this->monthlyApartmentConsumption[$monthKey] = 0;
+                    }
+                    
+                    $this->monthlyApartmentConsumption[$monthKey] += $consumption;
+                }
+            } else {
+                // If we skip this reading, the next reading needs to account for the missing month
+                // We still generate consumption, but don't create a reading record
+                $consumption = $this->getRandomConsumption($waterMeter->type);
+                $currentValue += $consumption;
+                
+                // Still track cold water consumption even for skipped readings
+                if ($waterMeter->type === 'cold' && $apartmentId) {
+                    if (!isset($this->monthlyApartmentConsumption[$monthKey])) {
+                        $this->monthlyApartmentConsumption[$monthKey] = 0;
+                    }
+                    
+                    $this->monthlyApartmentConsumption[$monthKey] += $consumption;
+                }
+            }
             
             // Move to next month
             $startDate->addMonth();

@@ -34,10 +34,16 @@
                 @endforeach
             </flux:select>
 
-            <flux:date-picker
-                wire:model="readingDate"
-                label="Дата на отчитане"
-                with-today />
+            <div class="space-y-1">
+                <flux:date-picker
+                    wire:model="readingDate"
+                    label="Дата на отчитане"
+                    with-today
+                    :error="$errors->has('readingDate')" />
+                @error('readingDate')
+                    <div class="text-xs text-red-600">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
         @if (empty($meters))
@@ -76,23 +82,35 @@
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        <flux:input
-                            type="number"
-                            id="meter-value-{{ $index }}"
-                            wire:model="meters.{{ $index }}.value"
-                            step="0.001"
-                            placeholder="000.000"
-                            suffix="m³"
-                            size="sm" />
+                        <div class="space-y-1">
+                            <flux:input
+                                type="number"
+                                id="meter-value-{{ $index }}"
+                                wire:model="meters.{{ $index }}.value"
+                                step="0.001"
+                                placeholder="000.000"
+                                suffix="m³"
+                                size="sm"
+                                :error="$errors->has('meters.' . $index . '.value')" />
+                            @error('meters.' . $index . '.value')
+                                <div class="text-xs text-red-600">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        <flux:input
-                            type="file"
-                            id="meter-photo-{{ $index }}"
-                            wire:model="meters.{{ $index }}.photo"
-                            accept="image/*"
-                            size="sm" />
+                        <div class="space-y-1">
+                            <flux:input
+                                type="file"
+                                id="meter-photo-{{ $index }}"
+                                wire:model="meters.{{ $index }}.photo"
+                                accept="image/*"
+                                size="sm"
+                                :error="$errors->has('meters.' . $index . '.photo')" />
+                            @error('meters.' . $index . '.photo')
+                                <div class="text-xs text-red-600">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </flux:table.cell>
                 </flux:table.row>
                 @endforeach

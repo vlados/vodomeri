@@ -8,6 +8,7 @@ use App\Models\WaterMeter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -27,13 +28,26 @@ class Dashboard extends Component
         $this->waterLossData = $this->getWaterLossData();
     }
     
+    public function updatedSelectedApartmentId()
+    {
+        // Update the chart data when the apartment selection changes
+        $this->chartData = $this->getConsumptionChartData();
+    }
+    
     public $chartData = [];
     public $waterLossData = [];
+    public $selectedApartmentId = null;
     
     public function getConsumptionChartData()
     {
         $user = Auth::user();
         $apartmentIds = $user->apartments->pluck('id');
+        
+        // Filter by selected apartment if one is selected
+        if ($this->selectedApartmentId) {
+            $apartmentIds = [$this->selectedApartmentId];
+        }
+        
         $waterMeterIds = WaterMeter::whereIn('apartment_id', $apartmentIds)->pluck('id');
         
         // Determine date range based on selected period
@@ -223,7 +237,7 @@ class Dashboard extends Component
             return [$item['hot'], $item['cold']];
         });
             
-        return $allValues->max() * 1.2; // Add 20% padding to the max value
+        return $allValues->max(); // Add 20% padding to the max value
     }
     
     public function getMaxWaterLossValue()
@@ -231,7 +245,125 @@ class Dashboard extends Component
         $waterLossData = $this->getWaterLossData();
         $allValues = collect($waterLossData)->pluck('water_loss');
             
-        return $allValues->max() * 1.2; // Add 20% padding to the max value
+        return $allValues->max(); // Add 20% padding to the max value
+    }
+    
+    public function getApartmentReadingsTable()
+    {
+        // Determine date range based on selected period
+        $startDate = null;
+        switch ($this->selectedPeriod) {
+            case 'last_3_months':
+                $startDate = now()->subMonths(3)->startOfMonth();
+                break;
+            case 'last_6_months':
+                $startDate = now()->subMonths(6)->startOfMonth();
+                break;
+            case 'last_12_months':
+                $startDate = now()->subMonths(12)->startOfMonth();
+                break;
+        }
+        
+        // Generate all months in the period
+        $months = [];
+        $currentDate = clone $startDate;
+        $endDate = now()->endOfMonth();
+        
+        while ($currentDate->lte($endDate)) {
+            $months[] = [
+                'date' => $currentDate->format('Y-m-d'),
+                'label' => $currentDate->format('M Y'),
+                'year' => $currentDate->year,
+                'month' => $currentDate->month,
+            ];
+            $currentDate->addMonth();
+        }
+        
+        // Get all apartments
+        $apartments = Apartment::orderBy('floor')->orderBy('number')->get();
+        
+        // Get all water meters
+        $waterMeters = WaterMeter::whereNotNull('apartment_id')
+            ->with('apartment')
+            ->get()
+            ->groupBy('apartment_id');
+        
+        // Get all readings within the date range
+        $readings = Reading::whereIn('water_meter_id', WaterMeter::whereNotNull('apartment_id')->pluck('id'))
+            ->where('reading_date', '>=', $startDate)
+            ->with('waterMeter')
+            ->get();
+        
+        // Prepare the result data structure
+        $tableData = [
+            'months' => $months,
+            'apartments' => [],
+        ];
+        
+        // Process each apartment
+        foreach ($apartments as $apartment) {
+            $apartmentData = [
+                'id' => $apartment->id,
+                'floor' => $apartment->floor,
+                'number' => $apartment->number,
+                'name' => "Етаж {$apartment->floor}, Ап. {$apartment->number}",
+                'readings' => [],
+            ];
+            
+            // Get the water meters for this apartment
+            $apartmentMeters = $waterMeters[$apartment->id] ?? collect();
+            $meterIds = $apartmentMeters->pluck('id')->toArray();
+            
+            // Process each month
+            foreach ($months as $month) {
+                $year = $month['year'];
+                $monthNum = $month['month'];
+                
+                // Check if there are readings for this month for any of the apartment's meters
+                $monthReadings = $readings->filter(function ($reading) use ($meterIds, $year, $monthNum) {
+                    return in_array($reading->water_meter_id, $meterIds) && 
+                           Carbon::parse($reading->reading_date)->month == $monthNum && 
+                           Carbon::parse($reading->reading_date)->year == $year;
+                });
+                
+                // Count total meters and submitted readings
+                $totalMeters = $apartmentMeters->count();
+                $submittedReadings = 0;
+                $uniqueMetersWithReadings = collect();
+                
+                foreach ($monthReadings as $reading) {
+                    // Count unique meters with readings
+                    if (!$uniqueMetersWithReadings->contains($reading->water_meter_id)) {
+                        $uniqueMetersWithReadings->push($reading->water_meter_id);
+                        $submittedReadings++;
+                    }
+                }
+                
+                // Calculate status
+                $status = 'none'; // Default: No readings
+                
+                if ($submittedReadings > 0) {
+                    if ($submittedReadings == $totalMeters) {
+                        $status = 'complete'; // All readings submitted
+                    } else {
+                        $status = 'partial'; // Some readings submitted
+                    }
+                }
+                
+                // Store the month data
+                $apartmentData['readings'][] = [
+                    'year' => $year,
+                    'month' => $monthNum,
+                    'status' => $status,
+                    'submitted' => $submittedReadings,
+                    'total' => $totalMeters,
+                ];
+            }
+            
+            $tableData['apartments'][] = $apartmentData;
+        }
+        
+        return $tableData;
     }
     
     public function render()
@@ -240,6 +372,11 @@ class Dashboard extends Component
         
         // Get apartments associated with this user
         $apartments = $user->apartments;
+        
+        // Initialize selectedApartmentId if not set and user has apartments
+        if (!$this->selectedApartmentId && $apartments->count() > 0) {
+            $this->selectedApartmentId = $apartments->first()->id;
+        }
         
         // Get all water meters for these apartments
         $waterMeters = WaterMeter::whereIn('apartment_id', $apartments->pluck('id'))
@@ -257,11 +394,15 @@ class Dashboard extends Component
         $this->waterLossData = $this->getWaterLossData();
         $maxLossValue = $this->getMaxWaterLossValue();
         
+        // Get the readings status table data
+        $readingsTableData = $this->getApartmentReadingsTable();
+        
         return view('livewire.resident.dashboard', [
             'apartments' => $apartments,
             'metersByApartment' => $metersByApartment,
             'maxValue' => $maxValue,
-            'maxLossValue' => $maxLossValue
+            'maxLossValue' => $maxLossValue,
+            'readingsTableData' => $readingsTableData
         ]);
     }
 }

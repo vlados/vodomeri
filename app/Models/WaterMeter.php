@@ -25,7 +25,23 @@ class WaterMeter extends Model
      */
     public function isCentral(): bool
     {
-        return $this->type === 'central';
+        return $this->type === 'central-hot' || $this->type === 'central-cold';
+    }
+    
+    /**
+     * Whether this meter is a central hot water meter
+     */
+    public function isCentralHot(): bool
+    {
+        return $this->type === 'central-hot';
+    }
+    
+    /**
+     * Whether this meter is a central cold water meter
+     */
+    public function isCentralCold(): bool
+    {
+        return $this->type === 'central-cold';
     }
     
     protected $casts = [

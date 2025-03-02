@@ -1,8 +1,8 @@
 <div>
     <div class="grid grid-cols-1 gap-10">
         <!-- Header with actions -->
-        <div class="flex justify-between items-center w-full">
-            <div class="flex space-x-2">
+        <div class="sm:flex sm:justify-between sm:items-center w-full grid grid-cols-2 gap-4">
+            <div class="flex space-x-2 col-span-2">
                 @if($apartments->count() > 1)
                 <flux:select variant="listbox" class="sm:max-w-fit" wire:model.live="selectedApartmentId">
                     <x-slot name="trigger">
@@ -32,9 +32,11 @@
                 </flux:select>
             </div>
 
-            <div class="flex space-x-2 ml-2">
-                <flux:button href="{{ route('meters.add') }}" icon="plus" size="sm">Нов водомер</flux:button>
-                <flux:button href="{{ route('readings.multiple') }}" icon="pencil-square" size="sm" variant="primary">Самоотчет</flux:button>
+            <div class="col-span-1 w-full">
+                <flux:button href="{{ route('meters.add') }}" icon="plus" size="sm" class="w-full justify-center sm:w-auto sm:justify-start">Нов водомер</flux:button>
+            </div>
+            <div class="col-span-1 w-full ml-auto flex justify-end">
+                <flux:button href="{{ route('readings.multiple') }}" icon="pencil-square" size="sm" variant="primary" class="w-full justify-center sm:w-auto sm:justify-start">Самоотчет</flux:button>
             </div>
         </div>
         <div class="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -45,8 +47,10 @@
 
                 <flux:chart wire:model="chartData" class="aspect-3/1">
                     <flux:chart.svg>
-                        <flux:chart.line field="hot" class="text-red-500" name="Топла вода (m³)" />
-                        <flux:chart.line field="cold" class="text-blue-500" name="Студена вода (m³)" />
+                        <flux:chart.line curve="none" field="hot" class="text-red-500" name="Топла вода (m³)" />
+                        <flux:chart.point field="hot" class="text-red-500" name="Топла вода (m³)" />
+                        <flux:chart.line curve="none" field="cold" class="text-blue-500" name="Студена вода (m³)" />
+                        <flux:chart.point field="cold" class="text-blue-500" name="Студена вода (m³)" />
 
                         <flux:chart.axis axis="x" field="date">
                             <flux:chart.axis.line />
@@ -77,7 +81,10 @@
 
                 <flux:chart wire:model="waterLossData" class="aspect-3/1">
                     <flux:chart.svg>
-                        <flux:chart.line field="water_loss" class="text-purple-500" name="Загуби на вода (m³)" />
+                        <flux:chart.line curve="none" field="cold_water_loss" class="text-blue-500" name="Загуби на студена вода (m³)" />
+                        <flux:chart.point field="cold_water_loss" class="text-blue-500" name="Загуби на студена вода (m³)" />
+                        <flux:chart.line curve="none" field="hot_water_loss" class="text-red-500" name="Загуби на топла вода (m³)" />
+                        <flux:chart.point field="hot_water_loss" class="text-red-500" name="Загуби на топла вода (m³)" />
 
                         <flux:chart.axis axis="x" field="date">
                             <flux:chart.axis.line />
@@ -94,7 +101,8 @@
 
                     <flux:chart.tooltip>
                         <flux:chart.tooltip.heading field="date" :format="['year' => 'numeric', 'month' => 'numeric', 'day' => 'numeric']" />
-                        <flux:chart.tooltip.value field="water_loss" label="Загуби на вода" suffix=" m³" />
+                        <flux:chart.tooltip.value field="cold_water_loss" label="Загуби на студена вода" suffix=" m³" />
+                        <flux:chart.tooltip.value field="hot_water_loss" label="Загуби на топла вода" suffix=" m³" />
                     </flux:chart.tooltip>
                 </flux:chart>
             </flux:card>
@@ -135,16 +143,18 @@
                                         </svg>
                                     </span>
                                     @elseif($reading['status'] === 'partial')
-                                    <flux:tooltip content="Подадени са само {{ $reading['submitted'] }} показания от {{ $reading['total'] }}">
-                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
-                                        <span class="text-xs font-medium text-yellow-800">{{ $reading['submitted'] }}/{{ $reading['total'] }}</span>
-                                    </span>
+                                    <flux:tooltip content="Подадени ">
+                                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
+                                            <span class="text-xs font-medium text-yellow-800">{{ $reading['submitted'] }}/{{ $reading['total'] }}</span>
+                                        </span>
                                     </flux:tooltip>
                                     @else
                                     <flux:tooltip content="Няма въведени показания">
-                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-600">
-                                        <svg class="h-5 w-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M96 64c0-17.7-14.3-32-32-32S32 46.3 32 64l0 256c0 17.7 14.3 32 32 32s32-14.3 32-32L96 64zM64 480a40 40 0 1 0 0-80 40 40 0 1 0 0 80z"/></svg>
-                                    </span>
+                                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-600">
+                                            <svg class="h-5 w-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                <path d="M96 64c0-17.7-14.3-32-32-32S32 46.3 32 64l0 256c0 17.7 14.3 32 32 32s32-14.3 32-32L96 64zM64 480a40 40 0 1 0 0-80 40 40 0 1 0 0 80z" />
+                                            </svg>
+                                        </span>
                                     </flux:tooltip>
                                     @endif
                                 </td>
@@ -172,7 +182,9 @@
                     </div>
                     <div class="flex items-center">
                         <span class="inline-flex items-center justify-center h-6 w-6 rounded-full mr-2">
-                        <svg class="h-4 w-4 fill-current text-red-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480L40 480c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24l0 112c0 13.3 10.7 24 24 24s24-10.7 24-24l0-112c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></svg>
+                            <svg class="h-4 w-4 fill-current text-red-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                <path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480L40 480c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24l0 112c0 13.3 10.7 24 24 24s24-10.7 24-24l0-112c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z" />
+                            </svg>
                         </span>
                         <span>Няма показания</span>
                     </div>

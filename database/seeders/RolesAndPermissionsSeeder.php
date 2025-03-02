@@ -24,23 +24,23 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'create apartments']);
         Permission::firstOrCreate(['name' => 'edit apartments']);
         Permission::firstOrCreate(['name' => 'delete apartments']);
-        
+
         // Water meter permissions
         Permission::firstOrCreate(['name' => 'view water meters']);
         Permission::firstOrCreate(['name' => 'create water meters']);
         Permission::firstOrCreate(['name' => 'edit water meters']);
         Permission::firstOrCreate(['name' => 'delete water meters']);
-        
+
         // Reading permissions
         Permission::firstOrCreate(['name' => 'view readings']);
         Permission::firstOrCreate(['name' => 'submit readings']);
         Permission::firstOrCreate(['name' => 'approve readings']);
         Permission::firstOrCreate(['name' => 'reject readings']);
-        
+
         // Invitation permissions
         Permission::firstOrCreate(['name' => 'create invitations']);
         Permission::firstOrCreate(['name' => 'view invitations']);
-        
+
         // User management permissions
         Permission::firstOrCreate(['name' => 'manage users']);
         Permission::firstOrCreate(['name' => 'view users']);
@@ -49,7 +49,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Admin role
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
-        
+
         // Resident role
         $residentRole = Role::firstOrCreate(['name' => 'resident']);
         $residentRole->givePermissionTo([
@@ -58,11 +58,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'view readings',
             'submit readings',
         ]);
-        
+
         // Create a default admin user
         $admin = User::where('email', 'admin@example.com')->first();
-        
-        if (!$admin) {
+
+        if (! $admin) {
             $admin = User::factory()->create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
@@ -70,7 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
         }
-        
+
         $admin->assignRole($adminRole);
     }
 }

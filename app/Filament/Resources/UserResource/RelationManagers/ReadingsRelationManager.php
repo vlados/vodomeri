@@ -2,14 +2,11 @@
 
 namespace App\Filament\Resources\UserResource\RelationManagers;
 
-use App\Models\Reading;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReadingsRelationManager extends RelationManager
 {
@@ -23,6 +20,7 @@ class ReadingsRelationManager extends RelationManager
                     ->relationship('waterMeter', function ($query) {
                         return $query->with('apartment')->get()->mapWithKeys(function ($meter) {
                             $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
+
                             return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water ({$meter->serial_number})"];
                         });
                     })

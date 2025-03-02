@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Reading extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'water_meter_id',
         'user_id',
@@ -19,13 +19,13 @@ class Reading extends Model
         'photo_path',
         'notes',
     ];
-    
+
     protected $casts = [
         'reading_date' => 'date',
         'value' => 'decimal:3',
         'consumption' => 'decimal:3',
     ];
-    
+
     /**
      * Get the water meter this reading belongs to
      */
@@ -33,7 +33,7 @@ class Reading extends Model
     {
         return $this->belongsTo(WaterMeter::class);
     }
-    
+
     /**
      * Get the user who submitted this reading
      */
@@ -41,7 +41,7 @@ class Reading extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * Calculate consumption based on previous reading
      */
@@ -53,15 +53,15 @@ class Reading extends Model
                 ->where('reading_date', '<', $reading->reading_date)
                 ->orderBy('reading_date', 'desc')
                 ->first();
-                
+
             // If there's no previous reading, use the initial reading from the water meter
-            if (!$previousReading) {
+            if (! $previousReading) {
                 $waterMeter = WaterMeter::find($reading->water_meter_id);
                 $previousValue = $waterMeter->initial_reading;
             } else {
                 $previousValue = $previousReading->value;
             }
-            
+
             // Calculate consumption
             $reading->consumption = $reading->value - $previousValue;
         });

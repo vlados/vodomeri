@@ -15,7 +15,7 @@ class CreateApartmentsAndInvitations extends Command
                            {--file= : Path to CSV file with apartment data}
                            {--skip-emails : Skip sending invitation emails}
                            {--force : Force creation even in production}';
-    
+
     protected $description = 'Create apartments and send invitations';
 
     /**
@@ -24,21 +24,23 @@ class CreateApartmentsAndInvitations extends Command
     public function handle(): int
     {
         // Check if we're in production and not forcing
-        if (app()->environment('production') && !$this->option('force')) {
+        if (app()->environment('production') && ! $this->option('force')) {
             $this->error('This command is not recommended for production use.');
             $this->info('If you want to run it anyway, use the --force option.');
+
             return Command::FAILURE;
         }
 
         // Get apartments from file or command line
         $apartmentsData = $this->getApartmentsData();
-        
+
         if (empty($apartmentsData)) {
             $this->error('No apartment data provided.');
+
             return Command::FAILURE;
         }
 
-        $this->info('Creating ' . count($apartmentsData) . ' apartments...');
+        $this->info('Creating '.count($apartmentsData).' apartments...');
 
         DB::beginTransaction();
 
@@ -49,10 +51,12 @@ class CreateApartmentsAndInvitations extends Command
 
             DB::commit();
             $this->info('All apartments, water meters, and invitations created successfully!');
+
             return Command::SUCCESS;
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('An error occurred: ' . $e->getMessage());
+            $this->error('An error occurred: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -69,7 +73,7 @@ class CreateApartmentsAndInvitations extends Command
 
         // Otherwise use command line arguments
         $apartmentNumbers = $this->option('apartments');
-        
+
         if (empty($apartmentNumbers)) {
             // Interactive mode - ask for apartments
             return $this->collectApartmentsInteractively();
@@ -98,8 +102,9 @@ class CreateApartmentsAndInvitations extends Command
      */
     private function parseFile(string $filePath): array
     {
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             $this->error("File not found: $filePath");
+
             return [];
         }
 
@@ -111,6 +116,7 @@ class CreateApartmentsAndInvitations extends Command
             return $this->parseJsonFile($filePath);
         } else {
             $this->error("Unsupported file format: $extension");
+
             return [];
         }
     }
@@ -122,14 +128,15 @@ class CreateApartmentsAndInvitations extends Command
     {
         $header = null;
         $data = [];
-        
-        if (($handle = fopen($filePath, "r")) !== false) {
-            while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+
+        if (($handle = fopen($filePath, 'r')) !== false) {
+            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
                 if ($header === null) {
                     $header = $row;
+
                     continue;
                 }
-                
+
                 $data[] = array_combine($header, $row);
             }
             fclose($handle);
@@ -144,6 +151,7 @@ class CreateApartmentsAndInvitations extends Command
     private function parseJsonFile(string $filePath): array
     {
         $content = file_get_contents($filePath);
+
         return json_decode($content, true) ?? [];
     }
 
@@ -154,24 +162,24 @@ class CreateApartmentsAndInvitations extends Command
     {
         $apartments = [];
         $this->info('Enter apartment details (leave blank to finish):');
-        
+
         $count = 1;
         while (true) {
             $this->info("\nApartment #$count");
             $number = $this->ask('Apartment number');
-            
+
             if (empty($number)) {
                 break;
             }
-            
+
             $floor = $this->ask('Floor', ceil($number / 4));
             $ownerName = $this->ask('Owner name');
             $email = $this->ask('Email (for invitation)');
             $phone = $this->ask('Phone number');
             $notes = $this->ask('Notes');
             $meterCount = (int) $this->ask('Number of water meters', 2);
-            $sendInvitation = $this->confirm('Send invitation email?', !empty($email));
-            
+            $sendInvitation = $this->confirm('Send invitation email?', ! empty($email));
+
             $apartments[] = [
                 'number' => $number,
                 'floor' => $floor,
@@ -182,10 +190,10 @@ class CreateApartmentsAndInvitations extends Command
                 'meters' => $meterCount,
                 'invitation' => $sendInvitation,
             ];
-            
+
             $count++;
         }
-        
+
         return $apartments;
     }
 
@@ -197,46 +205,46 @@ class CreateApartmentsAndInvitations extends Command
         // Extract meters and invitation data
         $meterCount = $data['meters'] ?? 2;
         $sendInvitation = $data['invitation'] ?? false;
-        
+
         // Remove non-apartment fields
         unset($data['meters'], $data['invitation']);
-        
+
         // Create apartment
         $apartment = Apartment::firstOrCreate(
             ['number' => $data['number']],
             $data
         );
-        
-        $this->info("Apartment {$apartment->number} " . 
+
+        $this->info("Apartment {$apartment->number} ".
             ($apartment->wasRecentlyCreated ? 'created' : 'already exists'));
-        
+
         // Create water meters if needed
         $currentMeters = $apartment->waterMeters()->count();
         if ($currentMeters < $meterCount) {
             for ($i = $currentMeters + 1; $i <= $meterCount; $i++) {
                 $location = $i === 1 ? 'Kitchen' : ($i === 2 ? 'Bathroom' : "Location $i");
-                
+
                 WaterMeter::create([
                     'apartment_id' => $apartment->id,
-                    'serial_number' => 'M' . $apartment->number . '-' . $i,
+                    'serial_number' => 'M'.$apartment->number.'-'.$i,
                     'location' => $location,
                     'type' => $i % 2 === 1 ? 'hot' : 'cold',
                     'initial_reading' => 0,
                 ]);
             }
-            
-            $this->info("Created " . ($meterCount - $currentMeters) . " water meters");
+
+            $this->info('Created '.($meterCount - $currentMeters).' water meters');
         }
-        
+
         // Create and send invitation if requested
-        if ($sendInvitation && !empty($data['email'])) {
+        if ($sendInvitation && ! empty($data['email'])) {
             // Check if there is already an active invitation
             $existingInvitation = Invitation::where('apartment_id', $apartment->id)
                 ->where('email', $data['email'])
                 ->where('used_at', null)
                 ->where('expires_at', '>', now())
                 ->first();
-            
+
             if ($existingInvitation) {
                 $this->info("Invitation for {$data['email']} already exists");
             } else {
@@ -245,11 +253,11 @@ class CreateApartmentsAndInvitations extends Command
                     'email' => $data['email'],
                     'expires_at' => now()->addDays(7),
                 ]);
-                
+
                 $this->info("Invitation created for {$data['email']}");
-                
+
                 // Send invitation email unless --skip-emails is set
-                if (!$this->option('skip-emails')) {
+                if (! $this->option('skip-emails')) {
                     $invitation->sendInvitationEmail();
                     $this->info("Invitation email sent to {$data['email']}");
                 }

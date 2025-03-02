@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WaterMeter extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'apartment_id',
         'serial_number',
@@ -19,7 +19,7 @@ class WaterMeter extends Model
         'installation_date',
         'initial_reading',
     ];
-    
+
     /**
      * Whether this meter is a central building meter
      */
@@ -27,7 +27,7 @@ class WaterMeter extends Model
     {
         return $this->type === 'central-hot' || $this->type === 'central-cold';
     }
-    
+
     /**
      * Whether this meter is a central hot water meter
      */
@@ -35,7 +35,7 @@ class WaterMeter extends Model
     {
         return $this->type === 'central-hot';
     }
-    
+
     /**
      * Whether this meter is a central cold water meter
      */
@@ -43,12 +43,12 @@ class WaterMeter extends Model
     {
         return $this->type === 'central-cold';
     }
-    
+
     protected $casts = [
         'installation_date' => 'date',
         'initial_reading' => 'decimal:3',
     ];
-    
+
     /**
      * Get the apartment this water meter belongs to
      */
@@ -56,7 +56,7 @@ class WaterMeter extends Model
     {
         return $this->belongsTo(Apartment::class);
     }
-    
+
     /**
      * Get the readings for this water meter
      */
@@ -64,7 +64,7 @@ class WaterMeter extends Model
     {
         return $this->hasMany(Reading::class);
     }
-    
+
     /**
      * Get the latest reading for this water meter
      */

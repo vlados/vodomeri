@@ -13,6 +13,7 @@ class CreateDefaultAdmin extends Command
 {
     protected $signature = 'app:create-default-admin
                             {--seed-roles : Run the RolesAndPermissionsSeeder}';
+
     protected $description = 'Create the default admin user';
 
     public function handle(): int
@@ -20,7 +21,7 @@ class CreateDefaultAdmin extends Command
         // Seed roles and permissions if the option is specified
         if ($this->option('seed-roles')) {
             $this->info('Seeding roles and permissions...');
-            
+
             // Reset cached roles and permissions
             app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
@@ -30,23 +31,23 @@ class CreateDefaultAdmin extends Command
             Permission::firstOrCreate(['name' => 'create apartments']);
             Permission::firstOrCreate(['name' => 'edit apartments']);
             Permission::firstOrCreate(['name' => 'delete apartments']);
-            
+
             // Water meter permissions
             Permission::firstOrCreate(['name' => 'view water meters']);
             Permission::firstOrCreate(['name' => 'create water meters']);
             Permission::firstOrCreate(['name' => 'edit water meters']);
             Permission::firstOrCreate(['name' => 'delete water meters']);
-            
+
             // Reading permissions
             Permission::firstOrCreate(['name' => 'view readings']);
             Permission::firstOrCreate(['name' => 'submit readings']);
             Permission::firstOrCreate(['name' => 'approve readings']);
             Permission::firstOrCreate(['name' => 'reject readings']);
-            
+
             // Invitation permissions
             Permission::firstOrCreate(['name' => 'create invitations']);
             Permission::firstOrCreate(['name' => 'view invitations']);
-            
+
             // User management permissions
             Permission::firstOrCreate(['name' => 'manage users']);
             Permission::firstOrCreate(['name' => 'view users']);
@@ -55,7 +56,7 @@ class CreateDefaultAdmin extends Command
             // Admin role
             $adminRole = Role::firstOrCreate(['name' => 'admin']);
             $adminRole->givePermissionTo(Permission::all());
-            
+
             // Resident role
             $residentRole = Role::firstOrCreate(['name' => 'resident']);
             $residentRole->givePermissionTo([
@@ -64,7 +65,7 @@ class CreateDefaultAdmin extends Command
                 'view readings',
                 'submit readings',
             ]);
-            
+
             $this->info('Roles and permissions seeded successfully.');
         }
 
@@ -72,10 +73,10 @@ class CreateDefaultAdmin extends Command
         $password = 'vodomeri';
 
         $user = User::firstOrNew(['email' => $email]);
-        
+
         if ($user->exists) {
             $this->info("Admin user with email {$email} already exists.");
-            
+
             if ($this->confirm('Do you want to reset the password?')) {
                 $user->password = Hash::make($password);
                 $user->save();
@@ -87,10 +88,10 @@ class CreateDefaultAdmin extends Command
             $user->password = Hash::make($password);
             $user->email_verified_at = now();
             $user->save();
-            
+
             $adminRole = Role::firstOrCreate(['name' => 'admin']);
             $user->assignRole($adminRole);
-            
+
             $this->info("Admin user created with email: {$email} and password: {$password}");
         }
 

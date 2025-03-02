@@ -15,11 +15,11 @@ class BugResource extends Resource
     protected static ?string $model = Bug::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bug-ant';
-    
+
     protected static ?string $navigationGroup = 'Управление';
-    
+
     protected static ?string $navigationLabel = 'Доклади за грешки';
-    
+
     protected static ?int $navigationSort = 100;
 
     public static function form(Form $form): Form

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Apartment extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'number',
         'floor',
@@ -19,7 +19,7 @@ class Apartment extends Model
         'phone',
         'notes',
     ];
-    
+
     /**
      * Get the water meters associated with this apartment
      */
@@ -27,7 +27,7 @@ class Apartment extends Model
     {
         return $this->hasMany(WaterMeter::class);
     }
-    
+
     /**
      * Get the invitations for this apartment
      */
@@ -35,7 +35,7 @@ class Apartment extends Model
     {
         return $this->hasMany(Invitation::class);
     }
-    
+
     /**
      * Get the users associated with this apartment
      */

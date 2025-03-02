@@ -8,7 +8,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class InvitationsRelationManager extends RelationManager
 {
@@ -51,11 +50,11 @@ class InvitationsRelationManager extends RelationManager
                         if ($record->used_at) {
                             return 'used';
                         }
-                        
+
                         if ($record->expires_at->isPast()) {
                             return 'expired';
                         }
-                        
+
                         return 'active';
                     })
                     ->color(function ($state) {
@@ -84,7 +83,7 @@ class InvitationsRelationManager extends RelationManager
                         if (empty($data['value'])) {
                             return $query;
                         }
-                        
+
                         return match ($data['value']) {
                             'active' => $query->whereNull('used_at')->where('expires_at', '>', now()),
                             'used' => $query->whereNotNull('used_at'),
@@ -103,14 +102,14 @@ class InvitationsRelationManager extends RelationManager
                     ->icon('heroicon-o-envelope')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn ($record) => is_null($record->used_at) && !$record->expires_at->isPast())
+                    ->visible(fn ($record) => is_null($record->used_at) && ! $record->expires_at->isPast())
                     ->action(function ($record) {
                         $record->sendInvitationEmail();
-                        
+
                         // Show notification
                         Filament\Notifications\Notification::make()
                             ->title('Invitation Sent')
-                            ->body('The invitation has been sent to ' . $record->email)
+                            ->body('The invitation has been sent to '.$record->email)
                             ->success()
                             ->send();
                     }),

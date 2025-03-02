@@ -3,25 +3,21 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReadingResource\Pages;
-use App\Filament\Resources\ReadingResource\RelationManagers;
 use App\Models\Reading;
-use App\Models\WaterMeter;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReadingResource extends Resource
 {
     protected static ?string $model = Reading::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    
+
     protected static ?string $navigationLabel = 'Meter Readings';
-    
+
     protected static ?string $navigationGroup = 'Readings Management';
 
     public static function form(Form $form): Form
@@ -36,6 +32,7 @@ class ReadingResource extends Resource
                             }
 
                             $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
+
                             return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water ({$meter->serial_number})"];
                         });
                     })
@@ -134,10 +131,11 @@ class ReadingResource extends Resource
                     ->relationship('waterMeter', function ($query) {
                         return $query->with('apartment')->get()->mapWithKeys(function ($meter) {
                             if ($meter->isCentral()) {
-                                return [$meter->id => "Central Building Meter"];
+                                return [$meter->id => 'Central Building Meter'];
                             }
-                            
+
                             $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
+
                             return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water"];
                         });
                     })

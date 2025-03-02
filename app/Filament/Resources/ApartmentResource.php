@@ -10,17 +10,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ApartmentResource extends Resource
 {
     protected static ?string $model = Apartment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-home';
-    
+
     protected static ?string $navigationLabel = 'Apartments';
-    
+
     protected static ?string $navigationGroup = 'Property Management';
 
     public static function form(Form $form): Form

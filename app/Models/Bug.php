@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Bug extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'user_id',
         'title',
@@ -19,7 +19,7 @@ class Bug extends Model
         'browser_info',
         'screenshot_path',
     ];
-    
+
     /**
      * Get the user who reported the bug
      */

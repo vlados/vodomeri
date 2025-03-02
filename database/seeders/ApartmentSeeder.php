@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Apartment;
 use App\Models\Invitation;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ApartmentSeeder extends Seeder
 {
@@ -40,33 +39,33 @@ class ApartmentSeeder extends Seeder
         foreach ($apartments as $apartmentData) {
             // Process and split multiple emails
             $emails = null;
-            if (!empty($apartmentData['email'])) {
+            if (! empty($apartmentData['email'])) {
                 $emails = array_map('trim', explode(',', $apartmentData['email']));
                 $apartmentData['email'] = $emails[0]; // Use the first email for the apartment record
             }
-            
+
             // Create the apartment
             $apartment = Apartment::create($apartmentData);
-            
+
             // Create invitations for emails if present
-            if (!empty($emails)) {
+            if (! empty($emails)) {
                 foreach ($emails as $email) {
                     $this->createInvitationForEmail($apartment, $email);
                 }
             }
         }
     }
-    
+
     /**
      * Create invitation for an email address
      */
     private function createInvitationForEmail(Apartment $apartment, string $email): void
     {
         // Skip empty emails or invalid format
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return;
         }
-        
+
         // Create invitation with default expiration (7 days from now)
         Invitation::create([
             'apartment_id' => $apartment->id,

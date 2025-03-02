@@ -17,18 +17,18 @@ class WaterMetersOverview extends BaseWidget
         $totalReadingsThisMonth = Reading::whereMonth('reading_date', now()->month)
             ->whereYear('reading_date', now()->year)
             ->count();
-            
+
         return [
             Stat::make('Total Apartments', $totalApartments)
                 ->description('Number of registered apartments')
                 ->descriptionIcon('heroicon-m-home')
                 ->color('primary'),
-            
+
             Stat::make('Total Water Meters', $totalMeters)
                 ->description('Total registered meters')
                 ->descriptionIcon('heroicon-m-beaker')
                 ->color('success'),
-                
+
             Stat::make('This Month\'s Readings', $totalReadingsThisMonth)
                 ->description('Readings submitted this month')
                 ->descriptionIcon('heroicon-m-calendar')

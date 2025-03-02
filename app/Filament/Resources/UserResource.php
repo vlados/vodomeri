@@ -5,23 +5,21 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Hash;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
-    
+
     protected static ?string $recordTitleAttribute = 'name';
-    
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -30,9 +28,9 @@ class UserResource extends Resource
     }
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    
+
     protected static ?string $navigationLabel = 'Users';
-    
+
     protected static ?string $navigationGroup = 'User Management';
 
     public static function form(Form $form): Form
@@ -51,8 +49,8 @@ class UserResource extends Resource
                     ->label('Email Verified At'),
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->dehydrateStateUsing(fn ($state) => !empty($state) ? Hash::make($state) : null)
-                    ->dehydrated(fn ($state) => !empty($state))
+                    ->dehydrateStateUsing(fn ($state) => ! empty($state) ? Hash::make($state) : null)
+                    ->dehydrated(fn ($state) => ! empty($state))
                     ->required(fn ($livewire) => $livewire instanceof Pages\CreateUser)
                     ->maxLength(255),
                 Forms\Components\Select::make('roles')

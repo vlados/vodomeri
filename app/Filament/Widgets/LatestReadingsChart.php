@@ -12,17 +12,17 @@ class LatestReadingsChart extends ChartWidget
 {
     protected static ?string $heading = 'Monthly Readings';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
         $data = Trend::model(Reading::class)
-                ->between(
-                    start: now()->subMonths(6),
-                    end: now(),
-                )
-                ->perMonth()
-                ->count();
+            ->between(
+                start: now()->subMonths(6),
+                end: now(),
+            )
+            ->perMonth()
+            ->count();
 
         return [
             'datasets' => [

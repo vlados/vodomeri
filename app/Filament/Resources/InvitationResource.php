@@ -3,25 +3,23 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InvitationResource\Pages;
-use App\Filament\Resources\InvitationResource\RelationManagers;
 use App\Models\Invitation;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Notifications\Notification;
 
 class InvitationResource extends Resource
 {
     protected static ?string $model = Invitation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-envelope';
-    
+
     protected static ?string $navigationLabel = 'Invitations';
-    
+
     protected static ?string $navigationGroup = 'User Management';
 
     public static function form(Form $form): Form
@@ -77,11 +75,11 @@ class InvitationResource extends Resource
                         if ($record->used_at) {
                             return 'used';
                         }
-                        
+
                         if ($record->expires_at->isPast()) {
                             return 'expired';
                         }
-                        
+
                         return 'active';
                     })
                     ->color(function ($state) {
@@ -114,7 +112,7 @@ class InvitationResource extends Resource
                         if (empty($data['value'])) {
                             return $query;
                         }
-                        
+
                         return match ($data['value']) {
                             'active' => $query->whereNull('used_at')->where('expires_at', '>', now()),
                             'used' => $query->whereNotNull('used_at'),
@@ -133,14 +131,14 @@ class InvitationResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn ($record) => is_null($record->used_at) && !$record->expires_at->isPast())
+                    ->visible(fn ($record) => is_null($record->used_at) && ! $record->expires_at->isPast())
                     ->action(function ($record) {
                         $record->sendInvitationEmail();
-                        
+
                         // Show notification
                         Notification::make()
                             ->title('Invitation Sent')
-                            ->body('The invitation has been sent to ' . $record->email)
+                            ->body('The invitation has been sent to '.$record->email)
                             ->success()
                             ->send();
                     }),

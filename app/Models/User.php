@@ -14,10 +14,10 @@ use Illuminate\Support\Str;
 use Lab404\Impersonate\Models\Impersonate;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements MustVerifyEmail, FilamentUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, Impersonate;
+    use HasFactory, HasRoles, Impersonate, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -82,7 +82,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     {
         return $this->hasMany(Reading::class);
     }
-    
+
     /**
      * Check if the user can impersonate other users
      * Only users with the admin role can impersonate
@@ -91,18 +91,18 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     {
         return $this->hasRole('admin');
     }
-    
+
     /**
      * Check if the user can be impersonated
      * Admin users cannot be impersonated
      */
     public function canBeImpersonated(): bool
     {
-        return !$this->hasRole('admin');
+        return ! $this->hasRole('admin');
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('admin');       
+        return $this->hasRole('admin');
     }
 }

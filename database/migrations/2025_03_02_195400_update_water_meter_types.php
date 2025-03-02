@@ -1,9 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,9 +14,9 @@ return new class extends Migration
         DB::table('water_meters')
             ->where('type', 'central')
             ->update(['type' => 'central-cold']);
-            
+
         // PostgreSQL syntax for altering enum type
-        DB::statement("ALTER TABLE water_meters DROP CONSTRAINT IF EXISTS water_meters_type_check");
+        DB::statement('ALTER TABLE water_meters DROP CONSTRAINT IF EXISTS water_meters_type_check');
         DB::statement("ALTER TABLE water_meters ADD CONSTRAINT water_meters_type_check CHECK (type IN ('hot', 'cold', 'central-hot', 'central-cold'))");
     }
 
@@ -31,9 +29,9 @@ return new class extends Migration
         DB::table('water_meters')
             ->whereIn('type', ['central-hot', 'central-cold'])
             ->update(['type' => 'central']);
-            
+
         // Revert PostgreSQL enum constraints
-        DB::statement("ALTER TABLE water_meters DROP CONSTRAINT IF EXISTS water_meters_type_check");
+        DB::statement('ALTER TABLE water_meters DROP CONSTRAINT IF EXISTS water_meters_type_check');
         DB::statement("ALTER TABLE water_meters ADD CONSTRAINT water_meters_type_check CHECK (type IN ('hot', 'cold', 'central'))");
     }
 };

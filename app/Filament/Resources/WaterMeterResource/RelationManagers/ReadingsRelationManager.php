@@ -8,8 +8,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 
 class ReadingsRelationManager extends RelationManager
@@ -81,7 +79,7 @@ class ReadingsRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',
-                        'approved' => 'Approved', 
+                        'approved' => 'Approved',
                         'rejected' => 'Rejected',
                     ]),
             ])
@@ -89,6 +87,7 @@ class ReadingsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->mutateFormDataUsing(function (array $data) {
                         $data['user_id'] = auth()->id();
+
                         return $data;
                     }),
             ])

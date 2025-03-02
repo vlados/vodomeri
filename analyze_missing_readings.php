@@ -3,10 +3,7 @@
 require __DIR__.'/vendor/autoload.php';
 
 use App\Models\Apartment;
-use App\Models\Reading;
-use App\Models\WaterMeter;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 // Bootstrap Laravel application
 $app = require_once __DIR__.'/bootstrap/app.php';
@@ -21,7 +18,7 @@ echo "=================================================================\n";
 // Get date range for analysis
 $endDate = Carbon::now()->endOfMonth();
 $startDate = $endDate->copy()->subMonths(6)->startOfMonth();
-echo "Analyzing readings from " . $startDate->format('M Y') . " to " . $endDate->format('M Y') . "\n\n";
+echo 'Analyzing readings from '.$startDate->format('M Y').' to '.$endDate->format('M Y')."\n\n";
 
 // Generate all months in the period
 $months = [];
@@ -37,7 +34,7 @@ while ($currentDate->lte($endDate)) {
 }
 
 // Get all apartments
-$apartments = Apartment::with(['waterMeters', 'waterMeters.readings' => function($query) use ($startDate) {
+$apartments = Apartment::with(['waterMeters', 'waterMeters.readings' => function ($query) use ($startDate) {
     $query->where('reading_date', '>=', $startDate);
 }])->orderBy('floor')->orderBy('number')->get();
 
@@ -53,50 +50,50 @@ $apartmentsWithAllMissing = 0;
 foreach ($apartments as $apartment) {
     $hotMeters = $apartment->waterMeters->where('type', 'hot');
     $coldMeters = $apartment->waterMeters->where('type', 'cold');
-    
-    echo "Apartment Floor {$apartment->floor}, No. {$apartment->number}: " . 
-         $hotMeters->count() . " hot meter(s), " . 
-         $coldMeters->count() . " cold meter(s)\n";
-    
+
+    echo "Apartment Floor {$apartment->floor}, No. {$apartment->number}: ".
+         $hotMeters->count().' hot meter(s), '.
+         $coldMeters->count()." cold meter(s)\n";
+
     $missingMonths = 0;
     $partialMonths = 0;
     $completeMonths = 0;
-    
+
     // Check each month
     foreach ($months as $month) {
         $year = $month['year'];
         $monthNum = $month['month'];
-        
+
         $hotReadings = 0;
         $coldReadings = 0;
-        
+
         // Check hot water meters
         foreach ($hotMeters as $meter) {
-            $hasReading = $meter->readings->contains(function($reading) use ($year, $monthNum) {
+            $hasReading = $meter->readings->contains(function ($reading) use ($year, $monthNum) {
                 return Carbon::parse($reading->reading_date)->year == $year &&
                        Carbon::parse($reading->reading_date)->month == $monthNum;
             });
-            
+
             if ($hasReading) {
                 $hotReadings++;
             }
         }
-        
+
         // Check cold water meters
         foreach ($coldMeters as $meter) {
-            $hasReading = $meter->readings->contains(function($reading) use ($year, $monthNum) {
+            $hasReading = $meter->readings->contains(function ($reading) use ($year, $monthNum) {
                 return Carbon::parse($reading->reading_date)->year == $year &&
                        Carbon::parse($reading->reading_date)->month == $monthNum;
             });
-            
+
             if ($hasReading) {
                 $coldReadings++;
             }
         }
-        
+
         // Determine status
         $status = 'none'; // Default status
-        
+
         if ($hotMeters->count() > 0 && $coldMeters->count() > 0) {
             // If apartment has both types of meters
             if ($hotReadings == $hotMeters->count() && $coldReadings == $coldMeters->count()) {
@@ -109,7 +106,7 @@ foreach ($apartments as $apartment) {
         } elseif ($coldMeters->count() > 0 && $coldReadings == $coldMeters->count()) {
             $status = 'complete'; // All cold meters have readings
         }
-        
+
         // Update counters
         if ($status === 'none') {
             $missingMonths++;
@@ -118,9 +115,9 @@ foreach ($apartments as $apartment) {
         } elseif ($status === 'complete') {
             $completeMonths++;
         }
-        
-        echo "  - " . str_pad($month['label'], 8) . ": ";
-        
+
+        echo '  - '.str_pad($month['label'], 8).': ';
+
         if ($status === 'complete') {
             echo "\033[32mComplete\033[0m";  // Green
         } elseif ($status === 'partial') {
@@ -128,15 +125,15 @@ foreach ($apartments as $apartment) {
         } else {
             echo "\033[31mMissing\033[0m";   // Red
         }
-        
+
         echo " (Hot: $hotReadings/{$hotMeters->count()}, Cold: $coldReadings/{$coldMeters->count()})\n";
     }
-    
+
     // Update global counters
     $totalMissingMonths += $missingMonths;
     $totalPartialMonths += $partialMonths;
     $totalCompleteMonths += $completeMonths;
-    
+
     // Count apartment status
     if ($missingMonths === count($months)) {
         $apartmentsWithAllMissing++;
@@ -145,19 +142,19 @@ foreach ($apartments as $apartment) {
     } else {
         $apartmentsWithSomeMissing++;
     }
-    
-    echo "  Summary: " . 
-         "\033[32mComplete: $completeMonths\033[0m, " . 
-         "\033[33mPartial: $partialMonths\033[0m, " . 
-         "\033[31mMissing: $missingMonths\033[0m out of " . 
-         count($months) . " months\n\n";
+
+    echo '  Summary: '.
+         "\033[32mComplete: $completeMonths\033[0m, ".
+         "\033[33mPartial: $partialMonths\033[0m, ".
+         "\033[31mMissing: $missingMonths\033[0m out of ".
+         count($months)." months\n\n";
 }
 
 // Overall statistics
 echo "=================================================================\n";
 echo "                  OVERALL STATISTICS                              \n";
 echo "=================================================================\n";
-echo "Total Apartments: " . $apartments->count() . "\n";
+echo 'Total Apartments: '.$apartments->count()."\n";
 echo "Apartments with all readings complete: $apartmentsWithAllReadings\n";
 echo "Apartments with some readings missing: $apartmentsWithSomeMissing\n";
 echo "Apartments with all readings missing: $apartmentsWithAllMissing\n\n";

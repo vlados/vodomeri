@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Mail\InvitationMail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class Invitation extends Model
@@ -61,10 +64,10 @@ class Invitation extends Model
     public function sendInvitationEmail(): void
     {
         try {
-            \Mail::to($this->email)->send(new \App\Mail\InvitationMail($this));
+            Mail::to($this->email)->send(new InvitationMail($this));
         } catch (\Exception $e) {
             // Log the error but don't crash the application
-            \Log::error('Failed to send invitation email: ' . $e->getMessage());
+            Log::error('Failed to send invitation email: ' . $e->getMessage());
         }
     }
     

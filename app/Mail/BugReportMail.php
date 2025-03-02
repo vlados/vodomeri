@@ -38,7 +38,7 @@ class BugReportMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.bug-report',
+            markdown: 'emails.bug-report',
         );
     }
 

@@ -30,11 +30,11 @@ class ApartmentSeeder extends Seeder
             ['number' => 'АП12', 'floor' => 6, 'owner_name' => 'Петьо Петров', 'email' => null, 'phone' => null, 'notes' => null],
             ['number' => 'АП13', 'floor' => 7, 'owner_name' => 'Петьо Петров', 'email' => null, 'phone' => null, 'notes' => null],
             ['number' => 'АП14', 'floor' => 7, 'owner_name' => 'Благой Николов', 'email' => 'nikolovblagoy@gmail.com', 'phone' => '0888720060', 'notes' => 'не'],
-            ['number' => 'АП15', 'floor' => 8, 'owner_name' => 'Ясена Стилиянова', 'email' => 'yassy.stil@gmail.com', 'phone' => '0889370571', 'notes' => 'не'],
-            ['number' => 'АП16', 'floor' => 8, 'owner_name' => 'Владислав Стоицов', 'email' => 'vlados.01@gmail.com', 'phone' => '0876540555', 'notes' => null],
-            ['number' => 'АП17', 'floor' => 9, 'owner_name' => 'Борис Михайлов, Мария Михайлова', 'email' => 'Bsmihaylov@gmail.com, Mimo4e@gmail.com', 'phone' => '0885677611, 0886851100', 'notes' => null],
-            ['number' => 'МАГ1', 'floor' => 0, 'owner_name' => 'Виктор Кузманов', 'email' => null, 'phone' => null, 'notes' => 'Магазин 1'],
-            ['number' => 'МАГ2', 'floor' => 0, 'owner_name' => 'Росина Жечева, Милена Славчева, Мартин Жечев', 'email' => null, 'phone' => '0878992603, 0877335499, 0888263323', 'notes' => 'Магазин 2, да'],
+            ['number' => 'АП15', 'floor' => 7, 'owner_name' => 'Ясена Стилиянова', 'email' => 'yassy.stil@gmail.com', 'phone' => '0889370571', 'notes' => 'не'],
+            ['number' => 'АП16', 'floor' => 6, 'owner_name' => 'Владислав Стоицов', 'email' => 'vlados.01@gmail.com', 'phone' => '0876540555', 'notes' => null],
+            ['number' => 'АП17', 'floor' => 6, 'owner_name' => 'Борис Михайлов, Мария Михайлова', 'email' => 'Bsmihaylov@gmail.com, Mimo4e@gmail.com', 'phone' => '0885677611, 0886851100', 'notes' => null],
+            ['number' => 'МАГ1 (FloorDecor)', 'floor' => 0, 'owner_name' => 'Виктор Кузманов', 'email' => null, 'phone' => null, 'notes' => 'Магазин 1'],
+            ['number' => 'МАГ2 (Берьозка)', 'floor' => 0, 'owner_name' => 'Росина Жечева, Милена Славчева, Мартин Жечев', 'email' => null, 'phone' => '0878992603, 0877335499, 0888263323', 'notes' => 'Магазин 2, да'],
         ];
 
         foreach ($apartments as $apartmentData) {

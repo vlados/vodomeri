@@ -69,7 +69,7 @@ class CreateDefaultAdmin extends Command
             $this->info('Roles and permissions seeded successfully.');
         }
 
-        $email = 'dev@vladko.dev';
+        $email = config('mail.from.address');
         $password = 'vodomeri';
 
         $user = User::firstOrNew(['email' => $email]);

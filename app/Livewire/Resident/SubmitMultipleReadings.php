@@ -4,6 +4,7 @@ namespace App\Livewire\Resident;
 
 use App\Models\Reading;
 use App\Models\WaterMeter;
+use App\Services\OpenAIService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -18,6 +19,8 @@ class SubmitMultipleReadings extends Component
     public $meters = [];
     public $selectedApartmentId = null;
     public array|Collection $apartments = [];
+    public $verificationResults = [];
+    public $aiVerificationEnabled = true;
     
     public function mount()
     {
@@ -147,6 +150,68 @@ class SubmitMultipleReadings extends Component
         return $attributes;
     }
     
+    /**
+     * Verify meter readings using OpenAI Vision API
+     */
+    public function verifyReadings()
+    {
+        $this->validate();
+        
+        // Reset verification results
+        $this->verificationResults = [];
+        
+        // Skip verification if disabled
+        if (!$this->aiVerificationEnabled) {
+            $this->submit();
+            return;
+        }
+        
+        $openAiService = new OpenAIService();
+        $needManualVerification = false;
+        
+        foreach ($this->meters as $index => $meterData) {
+            // Skip meters without photos
+            if (empty($meterData['photo'])) {
+                $this->verificationResults[$index] = [
+                    'status' => 'skipped',
+                    'message' => 'Няма снимка за верификация'
+                ];
+                continue;
+            }
+            
+            // Store the photo temporarily
+            $photoPath = $meterData['photo']->store('reading-photos-temp', 'public');
+            
+            // Analyze the meter reading with OpenAI
+            $analysis = $openAiService->analyzeMeterReading(
+                $photoPath, 
+                $meterData['serial_number'],
+                (float) $meterData['value']
+            );
+            
+            // Store results
+            $this->verificationResults[$index] = [
+                'status' => $analysis['success'] ? 'success' : 'error',
+                'message' => $analysis['message'],
+                'details' => $analysis,
+                'photo_path' => $photoPath
+            ];
+            
+            // Flag if any meter needs manual verification
+            if (!$analysis['success']) {
+                $needManualVerification = true;
+            }
+        }
+        
+        // If all readings are verified or there's nothing to verify, proceed with submission
+        if (!$needManualVerification) {
+            $this->submit();
+        }
+    }
+    
+    /**
+     * Submit readings after verification (or skip verification)
+     */
     public function submit()
     {
         $this->validate();
@@ -154,12 +219,49 @@ class SubmitMultipleReadings extends Component
         // Save readings for each meter
         $readingsSubmitted = 0;
         
-        foreach ($this->meters as $meterData) {
+        foreach ($this->meters as $index => $meterData) {
             
             // Handle photo upload if provided
             $photoPath = null;
+            
             if (!empty($meterData['photo'])) {
-                $photoPath = $meterData['photo']->store('reading-photos', 'public');
+                // If we already verified and have a temporary photo path, move it to permanent storage
+                if (isset($this->verificationResults[$index]['photo_path'])) {
+                    $tempPath = $this->verificationResults[$index]['photo_path'];
+                    $photoPath = str_replace('reading-photos-temp', 'reading-photos', $tempPath);
+                    
+                    // Rename the file to permanent storage
+                    if (\Storage::disk('public')->exists($tempPath)) {
+                        \Storage::disk('public')->copy($tempPath, $photoPath);
+                        \Storage::disk('public')->delete($tempPath);
+                    } else {
+                        // If temp file doesn't exist, store the original upload
+                        $photoPath = $meterData['photo']->store('reading-photos', 'public');
+                    }
+                } else {
+                    // No verification was done, store the original upload
+                    $photoPath = $meterData['photo']->store('reading-photos', 'public');
+                }
+            }
+            
+            // Add verification results to notes if available
+            $notes = $meterData['notes'] ?? '';
+            
+            if (isset($this->verificationResults[$index]) && $this->verificationResults[$index]['status'] !== 'skipped') {
+                $verificationStatus = $this->verificationResults[$index]['status'] === 'success' ? 'успешна' : 'неуспешна';
+                $notes .= ($notes ? "\n" : "") . "AI Верификация: {$verificationStatus}. " . 
+                         $this->verificationResults[$index]['message'];
+                
+                // Add confidence level if available
+                if (isset($this->verificationResults[$index]['details']['confidence'])) {
+                    $confidenceMap = [
+                        'high' => 'висока',
+                        'medium' => 'средна',
+                        'low' => 'ниска'
+                    ];
+                    $confidence = $confidenceMap[$this->verificationResults[$index]['details']['confidence']] ?? $this->verificationResults[$index]['details']['confidence'];
+                    $notes .= " Сигурност: {$confidence}.";
+                }
             }
             
             // Create the reading
@@ -168,7 +270,7 @@ class SubmitMultipleReadings extends Component
             $reading->user_id = Auth::id();
             $reading->reading_date = Carbon::parse($this->readingDate);
             $reading->value = $meterData['value'];
-            $reading->notes = $meterData['notes'] ?? null;
+            $reading->notes = $notes ?: null;
             $reading->photo_path = $photoPath;
             $reading->save();
             
@@ -182,7 +284,19 @@ class SubmitMultipleReadings extends Component
             return;
         }
         
+        // Clean up any leftover temporary files
+        \Storage::disk('public')->deleteDirectory('reading-photos-temp');
+        
         return redirect()->route('dashboard');
+    }
+    
+    /**
+     * Skip verification and submit readings directly
+     */
+    public function skipVerification()
+    {
+        $this->aiVerificationEnabled = false;
+        $this->submit();
     }
     
     public function render()

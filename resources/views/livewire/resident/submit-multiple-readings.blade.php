@@ -23,7 +23,7 @@
         </a>
     </div>
     @else
-    <form wire:submit="submit" class="space-y-6">
+    <form wire:submit="verifyReadings" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <flux:select
                 wire:model.live="selectedApartmentId"
@@ -140,10 +140,87 @@
         </flux:table>
         @endif
 
-        <div class="pt-4 flex">
+        <div class="pt-4 flex space-x-4">
             <flux:button type="submit" variant="primary">
-                Изпрати всички показания
+                Провери и изпрати показания
+            </flux:button>
+            
+            <flux:button wire:click="skipVerification"  type="button">
+                Изпрати без AI проверка
             </flux:button>
         </div>
     </form>
+    
+    @if (count($verificationResults) > 0)
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-4">Резултати от AI верификация</h2>
+        
+        <flux:table>
+            <flux:table.columns>
+                <flux:table.column>Водомер</flux:table.column>
+                <flux:table.column>Статус</flux:table.column>
+                <flux:table.column>Детайли</flux:table.column>
+                <flux:table.column>Действие</flux:table.column>
+            </flux:table.columns>
+            
+            <flux:table.rows>
+                @foreach ($meters as $index => $meter)
+                @if (isset($verificationResults[$index]))
+                <flux:table.row>
+                    <flux:table.cell>
+                        <div>
+                            <flux:badge size="sm" class="uppercase" variant="solid" color="{{ $meter['type'] === 'hot' ? 'red' : 'blue' }}">{{ $meter['type'] === 'hot' ? 'Топла' : 'Студена' }}</flux:badge>
+                            <div class="mt-1">№: {{ $meter['serial_number'] }}</div>
+                            <div class=" text-gray-500">Показание: {{ $meter['value'] ? number_format($meter['value'], 3) : 'Не е посочено' }} m³</div>
+                        </div>
+                    </flux:table.cell>
+                    
+                    <flux:table.cell>
+                        @if ($verificationResults[$index]['status'] === 'success')
+                            <flux:badge color="green" variant="outline">Потвърдено</flux:badge>
+                        @elseif ($verificationResults[$index]['status'] === 'error')
+                            <flux:badge color="red" variant="outline">Проблем</flux:badge>
+                        @else
+                            <flux:badge color="gray" variant="outline">Пропуснато</flux:badge>
+                        @endif
+                    </flux:table.cell>
+                    
+                    <flux:table.cell>
+                        <div class="text-sm">
+                            {{ $verificationResults[$index]['message'] }}
+                            
+                            @if (isset($verificationResults[$index]['details']['extracted']))
+                            <div class="mt-1 text-gray-600">
+                                @if (isset($verificationResults[$index]['details']['extracted']['serial_number']))
+                                    <div>Открит сериен номер: {{ $verificationResults[$index]['details']['extracted']['serial_number'] }}</div>
+                                @endif
+                                
+                                @if (isset($verificationResults[$index]['details']['extracted']['reading']))
+                                    <div>Открито показание: {{ $verificationResults[$index]['details']['extracted']['reading'] }}</div>
+                                @endif
+                            </div>
+                            @endif
+                            
+                            @if (isset($verificationResults[$index]['details']['issues']) && $verificationResults[$index]['details']['issues'])
+                            <div class="mt-1 text-amber-600">
+                                Проблеми: {{ $verificationResults[$index]['details']['issues'] }}
+                            </div>
+                            @endif
+                        </div>
+                    </flux:table.cell>
+                    
+                    <flux:table.cell>
+                        @if ($verificationResults[$index]['status'] === 'error')
+                        <div class="space-y-2">
+                            <div><flux:button size="xs" wire:click="submit" variant="outline">Изпрати въпреки това</flux:button></div>
+                        </div>
+                        @endif
+                    </flux:table.cell>
+                </flux:table.row>
+                @endif
+                @endforeach
+            </flux:table.rows>
+        </flux:table>
+    </div>
+    @endif
     @endif

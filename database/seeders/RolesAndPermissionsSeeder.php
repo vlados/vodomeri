@@ -20,38 +20,38 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create permissions
         // Apartment permissions
-        Permission::create(['name' => 'view apartments']);
-        Permission::create(['name' => 'create apartments']);
-        Permission::create(['name' => 'edit apartments']);
-        Permission::create(['name' => 'delete apartments']);
+        Permission::firstOrCreate(['name' => 'view apartments']);
+        Permission::firstOrCreate(['name' => 'create apartments']);
+        Permission::firstOrCreate(['name' => 'edit apartments']);
+        Permission::firstOrCreate(['name' => 'delete apartments']);
         
         // Water meter permissions
-        Permission::create(['name' => 'view water meters']);
-        Permission::create(['name' => 'create water meters']);
-        Permission::create(['name' => 'edit water meters']);
-        Permission::create(['name' => 'delete water meters']);
+        Permission::firstOrCreate(['name' => 'view water meters']);
+        Permission::firstOrCreate(['name' => 'create water meters']);
+        Permission::firstOrCreate(['name' => 'edit water meters']);
+        Permission::firstOrCreate(['name' => 'delete water meters']);
         
         // Reading permissions
-        Permission::create(['name' => 'view readings']);
-        Permission::create(['name' => 'submit readings']);
-        Permission::create(['name' => 'approve readings']);
-        Permission::create(['name' => 'reject readings']);
+        Permission::firstOrCreate(['name' => 'view readings']);
+        Permission::firstOrCreate(['name' => 'submit readings']);
+        Permission::firstOrCreate(['name' => 'approve readings']);
+        Permission::firstOrCreate(['name' => 'reject readings']);
         
         // Invitation permissions
-        Permission::create(['name' => 'create invitations']);
-        Permission::create(['name' => 'view invitations']);
+        Permission::firstOrCreate(['name' => 'create invitations']);
+        Permission::firstOrCreate(['name' => 'view invitations']);
         
         // User management permissions
-        Permission::create(['name' => 'manage users']);
-        Permission::create(['name' => 'view users']);
+        Permission::firstOrCreate(['name' => 'manage users']);
+        Permission::firstOrCreate(['name' => 'view users']);
 
         // Create roles and assign permissions
         // Admin role
-        $adminRole = Role::create(['name' => 'admin']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
         
         // Resident role
-        $residentRole = Role::create(['name' => 'resident']);
+        $residentRole = Role::firstOrCreate(['name' => 'resident']);
         $residentRole->givePermissionTo([
             'view apartments',
             'view water meters',

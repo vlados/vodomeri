@@ -3,17 +3,26 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class CreateDefaultAdmin extends Command
 {
-    protected $signature = 'app:create-default-admin';
+    protected $signature = 'app:create-default-admin
+                            {--seed-roles : Run the RolesAndPermissionsSeeder}';
     protected $description = 'Create the default admin user';
 
     public function handle(): int
     {
+        // Seed roles and permissions if the option is specified
+        if ($this->option('seed-roles')) {
+            $this->info('Seeding roles and permissions...');
+            (new RolesAndPermissionsSeeder())->run();
+            $this->info('Roles and permissions seeded successfully.');
+        }
+
         $email = 'dev@vladko.dev';
         $password = 'vodomeri';
 

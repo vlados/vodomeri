@@ -24,23 +24,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Set Carbon locale to Bulgarian
-        // \Carbon\Carbon::setLocale('bg_BG');
+         \Carbon\Carbon::setLocale('bg_BG');
 
         // Set default date format for Bulgaria
-        // \Carbon\Carbon::setToStringFormat('d.m.Y H:i');
-        
-        // Register the Symfony Mailer Postmark transport
-        Mail::extend('symfony', function ($config) {
-            if (!isset($config['dsn'])) {
-                throw new \InvalidArgumentException('The DSN is not configured for Symfony mailer transport.');
-            }
+//         \Carbon\Carbon::setToStringFormat('d.m.Y H:i');
 
-            if ($config['client'] === 'postmark') {
-                $factory = new PostmarkTransportFactory(null, HttpClient::create());
-                return $factory->create(Dsn::fromString($config['dsn']));
-            }
-            
-            throw new \InvalidArgumentException('Unsupported Symfony mailer client: ' . $config['client']);
-        });
+        // Register the Symfony Mailer Postmark transport
     }
 }

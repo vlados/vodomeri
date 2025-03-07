@@ -17,12 +17,15 @@ class ReadingsRelationManager extends RelationManager
         return $form
             ->schema([
                 Forms\Components\Select::make('water_meter_id')
-                    ->relationship('waterMeter', function ($query) {
-                        return $query->with('apartment')->get()->mapWithKeys(function ($meter) {
-                            $type = $meter->type === 'hot' ? 'Hot' : 'Cold';
+                    ->relationship('waterMeter', 'serial_number')
+                    ->getOptionLabelFromRecordUsing(function ($record) {
+                        if ($record->isCentral()) {
+                            return "Central Building Meter ({$record->serial_number})";
+                        }
 
-                            return [$meter->id => "Apt {$meter->apartment->number} - {$type} Water ({$meter->serial_number})"];
-                        });
+                        $type = $record->type === 'hot' ? 'Hot' : 'Cold';
+
+                        return "Apt {$record->apartment->number} - {$type} Water ({$record->serial_number})";
                     })
                     ->searchable()
                     ->required(),
@@ -70,8 +73,16 @@ class ReadingsRelationManager extends RelationManager
                     ->label('Meter Type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'hot' => 'danger',
-                        'cold' => 'info',
+                        'hot', 'central-hot' => 'danger',
+                        'cold', 'central-cold' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'hot' => 'Hot Water',
+                        'cold' => 'Cold Water',
+                        'central-hot' => 'Central Hot Water',
+                        'central-cold' => 'Central Cold Water',
+                        default => $state,
                     }),
                 Tables\Columns\TextColumn::make('reading_date')
                     ->date()

@@ -45,8 +45,9 @@ class WaterMetersRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'hot' => 'danger',
-                        'cold' => 'info',
+                        'hot', 'central-hot' => 'danger',
+                        'cold', 'central-cold' => 'info',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('location'),
                 Tables\Columns\TextColumn::make('installation_date')

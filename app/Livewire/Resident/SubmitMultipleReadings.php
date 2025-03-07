@@ -26,6 +26,7 @@ class SubmitMultipleReadings extends Component
     public $verificationResults = [];
 
     public $aiVerificationEnabled = true;
+    public $openAIConfigured = false;
 
     public function mount()
     {
@@ -38,6 +39,14 @@ class SubmitMultipleReadings extends Component
         if ($this->apartments->isNotEmpty()) {
             $this->selectedApartmentId = $this->apartments->first()->id;
             $this->loadMeters();
+        }
+        
+        // Check if OpenAI is configured
+        $this->openAIConfigured = OpenAIService::isConfigured();
+        
+        // If OpenAI is not configured, disable AI verification
+        if (!$this->openAIConfigured) {
+            $this->aiVerificationEnabled = false;
         }
     }
 
@@ -186,8 +195,11 @@ class SubmitMultipleReadings extends Component
                 continue;
             }
 
-            // Store the photo temporarily
-            $photoPath = $meterData['photo']->store('reading-photos-temp', 'public');
+            // Get the apartment ID for folder organization
+            $apartmentId = $this->selectedApartmentId;
+            
+            // Store the photo temporarily with apartment folder
+            $photoPath = $meterData['photo']->store("reading-photos-temp/apartment-{$apartmentId}", 'public');
 
             // Analyze the meter reading with OpenAI
             $analysis = $openAiService->analyzeMeterReading(
@@ -232,6 +244,10 @@ class SubmitMultipleReadings extends Component
             $photoPath = null;
 
             if (! empty($meterData['photo'])) {
+                // Get the apartment for folder organization
+                $apartmentId = $this->selectedApartmentId;
+                $apartmentFolder = "apartment-{$apartmentId}";
+                
                 // If we already verified and have a temporary photo path, move it to permanent storage
                 if (isset($this->verificationResults[$index]['photo_path'])) {
                     $tempPath = $this->verificationResults[$index]['photo_path'];
@@ -243,11 +259,11 @@ class SubmitMultipleReadings extends Component
                         \Storage::disk('public')->delete($tempPath);
                     } else {
                         // If temp file doesn't exist, store the original upload
-                        $photoPath = $meterData['photo']->store('reading-photos', 'public');
+                        $photoPath = $meterData['photo']->store("reading-photos/{$apartmentFolder}", 'public');
                     }
                 } else {
                     // No verification was done, store the original upload
-                    $photoPath = $meterData['photo']->store('reading-photos', 'public');
+                    $photoPath = $meterData['photo']->store("reading-photos/{$apartmentFolder}", 'public');
                 }
             }
 

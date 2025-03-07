@@ -76,15 +76,22 @@
             <!-- Water Loss Chart section -->
             <flux:card class="space-y-6">
                 <div>
-                    <flux:heading size="xl">Загуби на вода</flux:heading>
+                    <flux:heading size="xl">Общо потребление и загуби</flux:heading>
                 </div>
 
                 <flux:chart wire:model="waterLossData" class="aspect-3/1">
                     <flux:chart.svg>
-                        <flux:chart.line curve="none" field="cold_water_loss" class="text-blue-500" name="Загуби на студена вода (m³)" />
-                        <flux:chart.point field="cold_water_loss" class="text-blue-500" name="Загуби на студена вода (m³)" />
-                        <flux:chart.line curve="none" field="hot_water_loss" class="text-red-500" name="Загуби на топла вода (m³)" />
-                        <flux:chart.point field="hot_water_loss" class="text-red-500" name="Загуби на топла вода (m³)" />
+                        <!-- Cold water metrics -->
+                        <flux:chart.line curve="none" field="cold_water_total" class="text-blue-300" name="Общо студена вода (m³)" />
+                        <flux:chart.point field="cold_water_total" class="text-blue-300" name="Общо студена вода (m³)" />
+                        <flux:chart.line curve="none" field="cold_water_loss" class="text-blue-600" name="Загуби на студена вода (m³)" />
+                        <flux:chart.point field="cold_water_loss" class="text-blue-600" name="Загуби на студена вода (m³)" />
+                        
+                        <!-- Hot water metrics -->
+                        <flux:chart.line curve="none" field="hot_water_total" class="text-red-300" name="Общо топла вода (m³)" />
+                        <flux:chart.point field="hot_water_total" class="text-red-300" name="Общо топла вода (m³)" />
+                        <flux:chart.line curve="none" field="hot_water_loss" class="text-red-600" name="Загуби на топла вода (m³)" />
+                        <flux:chart.point field="hot_water_loss" class="text-red-600" name="Загуби на топла вода (m³)" />
 
                         <flux:chart.axis axis="x" field="date">
                             <flux:chart.axis.line />
@@ -101,7 +108,9 @@
 
                     <flux:chart.tooltip>
                         <flux:chart.tooltip.heading field="date" :format="['year' => 'numeric', 'month' => 'numeric', 'day' => 'numeric']" />
+                        <flux:chart.tooltip.value field="cold_water_total" label="Общо студена вода" suffix=" m³" />
                         <flux:chart.tooltip.value field="cold_water_loss" label="Загуби на студена вода" suffix=" m³" />
+                        <flux:chart.tooltip.value field="hot_water_total" label="Общо топла вода" suffix=" m³" />
                         <flux:chart.tooltip.value field="hot_water_loss" label="Загуби на топла вода" suffix=" m³" />
                     </flux:chart.tooltip>
                 </flux:chart>

@@ -14,9 +14,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
-            ApartmentSeeder::class,
-            UserSeeder::class,         // Now calling our new UserSeeder
-            WaterMeterAndReadingSeeder::class,
+//            ApartmentSeeder::class,
+//            UserSeeder::class,         // Now calling our new UserSeeder
+//            WaterMeterAndReadingSeeder::class,
         ]);
     }
 }

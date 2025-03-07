@@ -250,6 +250,7 @@ class Dashboard extends Component
             $apartmentColdValue = $apartmentColdReading ? (float) $apartmentColdReading->total_consumption : 0;
 
             $monthData['cold_water_loss'] = max(0, $centralColdValue - $apartmentColdValue);
+            $monthData['cold_water_total'] = $centralColdValue;
 
             // Get central hot meter readings for this month
             $centralHotReading = $centralHotReadings->first(function ($reading) use ($year, $month) {
@@ -268,6 +269,7 @@ class Dashboard extends Component
             $apartmentHotValue = $apartmentHotReading ? (float) $apartmentHotReading->total_consumption : 0;
 
             $monthData['hot_water_loss'] = max(0, $centralHotValue - $apartmentHotValue);
+            $monthData['hot_water_total'] = $centralHotValue;
         }
 
         // Format data for FluxUI chart
@@ -278,6 +280,8 @@ class Dashboard extends Component
                 'date' => $month['label'],
                 'cold_water_loss' => $month['cold_water_loss'],
                 'hot_water_loss' => $month['hot_water_loss'],
+                'cold_water_total' => $month['cold_water_total'],
+                'hot_water_total' => $month['hot_water_total'],
             ];
         }
 
@@ -298,7 +302,12 @@ class Dashboard extends Component
     {
         $waterLossData = $this->getWaterLossData();
         $allValues = collect($waterLossData)->flatMap(function ($item) {
-            return [$item['cold_water_loss'], $item['hot_water_loss']];
+            return [
+                $item['cold_water_loss'], 
+                $item['hot_water_loss'],
+                $item['cold_water_total'],
+                $item['hot_water_total']
+            ];
         });
 
         return $allValues->max(); // Return the maximum value

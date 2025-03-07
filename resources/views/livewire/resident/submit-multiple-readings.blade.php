@@ -64,6 +64,11 @@
                     <p class="text-sm text-blue-700">
                         <strong>Важно:</strong> За първо отчитане на водомер е задължително да прикачите снимка на показанието. За следващи отчитания снимката е препоръчителна, но не е задължителна.
                     </p>
+                    @if($openAIConfigured)
+                    <p class="text-sm text-blue-700 mt-1">
+                        <strong>AI верификация:</strong> Системата ще провери автоматично вашите показания и снимки чрез изкуствен интелект.
+                    </p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -141,13 +146,19 @@
         @endif
 
         <div class="pt-4 flex space-x-4">
-            <flux:button type="submit" variant="primary">
-                Провери и изпрати показания
-            </flux:button>
-            
-            <flux:button wire:click="skipVerification"  type="button">
-                Изпрати без AI проверка
-            </flux:button>
+            @if($openAIConfigured)
+                <flux:button type="submit" variant="primary">
+                    Провери и изпрати показания
+                </flux:button>
+                
+                <flux:button wire:click="skipVerification" type="button">
+                    Изпрати без AI проверка
+                </flux:button>
+            @else
+                <flux:button wire:click="skipVerification" type="button" variant="primary">
+                    Изпрати показания
+                </flux:button>
+            @endif
         </div>
     </form>
     

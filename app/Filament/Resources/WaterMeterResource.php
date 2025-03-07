@@ -141,6 +141,32 @@ class WaterMeterResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('addReading')
+                    ->label('Add Reading')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\DatePicker::make('reading_date')
+                            ->label('Date')
+                            ->required()
+                            ->default(now()),
+                        Forms\Components\TextInput::make('value')
+                            ->label('Reading Value')
+                            ->required()
+                            ->numeric()
+                            ->step(0.001),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Notes')
+                            ->maxLength(255),
+                    ])
+                    ->action(function (WaterMeter $record, array $data): void {
+                        $record->readings()->create([
+                            'user_id' => auth()->id(),
+                            'reading_date' => $data['reading_date'],
+                            'value' => $data['value'],
+                            'notes' => $data['notes'],
+                        ]);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

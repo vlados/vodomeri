@@ -27,9 +27,111 @@ class InvitationResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('apartment_id')
-                    ->relationship('apartment', 'number')
                     ->required()
-                    ->searchable(),
+                    ->preload()
+                    ->searchable()
+                    ->live()
+                    ->options(function () {
+                        $apartments = \App\Models\Apartment::orderBy('floor')->orderBy('number')->get();
+                        
+                        $grouped = [
+                            'Available' => [],
+                            'No Email Set' => [],
+                            'Has Active Invitation' => [],
+                            'Already Registered' => [],
+                        ];
+                        
+                        foreach ($apartments as $apartment) {
+                            $baseLabel = "Apt {$apartment->number} - Floor {$apartment->floor}" . 
+                                ($apartment->owner_name ? " ({$apartment->owner_name})" : "");
+                            
+                            // Check if apartment has email
+                            if (!$apartment->email) {
+                                $grouped['No Email Set'][$apartment->id] = $baseLabel;
+                                continue;
+                            }
+                            
+                            // Check if there's an active invitation for this email
+                            $activeInvitation = \App\Models\Invitation::where('email', $apartment->email)
+                                ->whereNull('used_at')
+                                ->where('expires_at', '>', now())
+                                ->first();
+                                
+                            if ($activeInvitation) {
+                                $grouped['Has Active Invitation'][$apartment->id] = $baseLabel;
+                                continue;
+                            }
+                            
+                            // Check if there's a used invitation for this email
+                            $usedInvitation = \App\Models\Invitation::where('email', $apartment->email)
+                                ->whereNotNull('used_at')
+                                ->first();
+                                
+                            if ($usedInvitation) {
+                                $grouped['Already Registered'][$apartment->id] = $baseLabel;
+                                continue;
+                            }
+                            
+                            // Available for invitation
+                            $grouped['Available'][$apartment->id] = $baseLabel;
+                        }
+                        
+                        // Remove empty groups
+                        foreach ($grouped as $key => $group) {
+                            if (empty($group)) {
+                                unset($grouped[$key]);
+                            }
+                        }
+                        
+                        return $grouped;
+                    })
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        if ($state) {
+                            // Get the apartment model
+                            $apartment = \App\Models\Apartment::find($state);
+                            
+                            // If apartment has an email, set it
+                            if ($apartment && $apartment->email) {
+                                $set('email', $apartment->email);
+                                
+                                // Check if there's an active invitation for this email
+                                $activeInvitation = \App\Models\Invitation::where('email', $apartment->email)
+                                    ->whereNull('used_at')
+                                    ->where('expires_at', '>', now())
+                                    ->first();
+                                    
+                                if ($activeInvitation) {
+                                    Notification::make()
+                                        ->title('Warning')
+                                        ->body("This email already has an active invitation that expires on {$activeInvitation->expires_at->format('M d, Y')}.")
+                                        ->warning()
+                                        ->persistent()
+                                        ->send();
+                                }
+                                
+                                // Check if there's a used invitation for this email
+                                $usedInvitation = \App\Models\Invitation::where('email', $apartment->email)
+                                    ->whereNotNull('used_at')
+                                    ->first();
+                                    
+                                if ($usedInvitation) {
+                                    Notification::make()
+                                        ->title('Info')
+                                        ->body("This email has already registered on {$usedInvitation->used_at->format('M d, Y')}.")
+                                        ->info()
+                                        ->persistent()
+                                        ->send();
+                                }
+                            } else if ($apartment && !$apartment->email) {
+                                Notification::make()
+                                    ->title('Warning')
+                                    ->body("This apartment does not have an email address set. Please enter an email manually.")
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                            }
+                        }
+                    }),
                 Forms\Components\TextInput::make('code')
                     ->required()
                     ->disabled()
@@ -38,7 +140,41 @@ class InvitationResource extends Resource
                     ->visible(fn ($livewire) => $livewire instanceof Pages\EditInvitation),
                 Forms\Components\TextInput::make('email')
                     ->email()
-                    ->required(),
+                    ->required()
+                    ->helperText('Email is automatically filled from apartment if available, but can be changed.')
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        if ($state) {
+                            // Check if there's an active invitation for this email
+                            $activeInvitation = \App\Models\Invitation::where('email', $state)
+                                ->whereNull('used_at')
+                                ->where('expires_at', '>', now())
+                                ->first();
+                                
+                            if ($activeInvitation) {
+                                Notification::make()
+                                    ->title('Warning')
+                                    ->body("This email already has an active invitation that expires on {$activeInvitation->expires_at->format('M d, Y')}.")
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                            }
+                            
+                            // Check if there's a used invitation for this email
+                            $usedInvitation = \App\Models\Invitation::where('email', $state)
+                                ->whereNotNull('used_at')
+                                ->first();
+                                
+                            if ($usedInvitation) {
+                                Notification::make()
+                                    ->title('Info')
+                                    ->body("This email has already registered on {$usedInvitation->used_at->format('M d, Y')}.")
+                                    ->info()
+                                    ->persistent()
+                                    ->send();
+                            }
+                        }
+                    })
+                    ->live(),
                 Forms\Components\DateTimePicker::make('expires_at')
                     ->required()
                     ->default(now()->addDays(7)),

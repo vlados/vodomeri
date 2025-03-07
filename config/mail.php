@@ -60,12 +60,7 @@ return [
             //     'timeout' => 5,
             // ],
         ],
-        
-        'postmark-symfony' => [
-            'transport' => 'symfony',
-            'client' => 'postmark',
-            'dsn' => 'postmark://'.env('POSTMARK_TOKEN').'@default',
-        ],
+
 
         'resend' => [
             'transport' => 'resend',

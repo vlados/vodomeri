@@ -375,15 +375,20 @@ class Dashboard extends Component
 
         // Get all apartments and sort them: first МАГ, then AT, then АП, and within each prefix by numeric part
         // Option 1: Using Collection sort method
-        // Get apartments sorted by floor and then by type/number using PHP sorting
-        // This avoids PostgreSQL regex issues with Cyrillic characters
-        $apartments = Apartment::orderBy('floor')->get()->sort(function($a, $b) {
+        // Get all apartments and sort them by floor, then by type (МАГ, AT, АП), then by number
+        $apartments = Apartment::all()->sort(function($a, $b) {
+            // First sort by floor
+            if ($a->floor !== $b->floor) {
+                return $a->floor <=> $b->floor;
+            }
+            
             // Define prefix priority (МАГ first, then AT, then АП)
             $prefixPriority = [
                 'МАГ' => 1,
                 'AT' => 2,
                 'АП' => 3,
                 'АT' => 2,  // Alternative spelling
+                'АТ' => 2,  // Another alternative spelling
                 'AP' => 3   // Alternative spelling
             ];
             
@@ -398,7 +403,7 @@ class Dashboard extends Component
             $priorityA = $prefixPriority[$prefixA] ?? 999; // Default to high number if unknown
             $priorityB = $prefixPriority[$prefixB] ?? 999;
             
-            // Sort by prefix priority
+            // Then sort by prefix priority
             if ($priorityA !== $priorityB) {
                 return $priorityA <=> $priorityB;
             }

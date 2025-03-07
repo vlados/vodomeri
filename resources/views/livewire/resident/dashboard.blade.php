@@ -99,7 +99,7 @@
                         <flux:chart.point field="cold_water_total" class="text-blue-300" name="Общо студена вода (m³)" />
                         <flux:chart.line curve="none" field="cold_water_loss" class="text-blue-600" name="Загуби на студена вода (m³)" />
                         <flux:chart.point field="cold_water_loss" class="text-blue-600" name="Загуби на студена вода (m³)" />
-                        
+
                         <!-- Hot water metrics -->
                         <flux:chart.line curve="none" field="hot_water_total" class="text-red-300" name="Общо топла вода (m³)" />
                         <flux:chart.point field="hot_water_total" class="text-red-300" name="Общо топла вода (m³)" />
@@ -149,54 +149,55 @@
 
                 @if(count($readingsTableData['months']) > 0 && count($readingsTableData['apartments']) > 0)
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                    Апартамент
-                                </th>
-                                @foreach($readingsTableData['months'] as $month)
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {{ Carbon\Carbon::parse($month['date'])->format('M Y') }}
-                                </th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($readingsTableData['apartments'] as $apartment)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white">
-                                    Етаж {{ $apartment['floor'] }}, {{ $apartment['number'] }}
-                                </td>
-                                @foreach($apartment['readings'] as $reading)
-                                <td class="px-3 py-2 whitespace-nowrap text-sm text-center">
-                                    @if($reading['status'] === 'complete')
-                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    </span>
-                                    @elseif($reading['status'] === 'partial')
-                                    <flux:tooltip content="Подадени ">
-                                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
-                                            <span class="text-xs font-medium text-yellow-800">{{ $reading['submitted'] }}/{{ $reading['total'] }}</span>
-                                        </span>
-                                    </flux:tooltip>
-                                    @else
-                                    <flux:tooltip content="Няма въведени показания">
-                                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-600">
-                                            <svg class="h-5 w-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
-                                                <path d="M96 64c0-17.7-14.3-32-32-32S32 46.3 32 64l0 256c0 17.7 14.3 32 32 32s32-14.3 32-32L96 64zM64 480a40 40 0 1 0 0-80 40 40 0 1 0 0 80z" />
-                                            </svg>
-                                        </span>
-                                    </flux:tooltip>
-                                    @endif
-                                </td>
-                                @endforeach
-                            </tr>
+                    <flux:table>
+                        <flux:table.columns>
+                            <flux:table.column pin="left">Апартамент</flux:table.column>
+                            @foreach($readingsTableData['months'] as $month)
+                            <flux:table.column class="text-center border-l border-gray-200">
+                                <div class="w-full text-center">{{ Carbon\Carbon::parse($month['date'])->translatedFormat('F Y') }}</div>
+                            </flux:table.column>
                             @endforeach
-                        </tbody>
-                    </table>
+                        </flux:table.columns>
+
+                        <flux:table.rows>
+                            @foreach($readingsTableData['apartments'] as $apartment)
+                            <flux:table.row>
+                                <flux:table.cell pin="left" variant="strong">
+                                    Етаж {{ $apartment['floor'] }}, {{ $apartment['number'] }}
+                                </flux:table.cell>
+                                @foreach($apartment['readings'] as $reading)
+                                <flux:table.cell class="text-center border-l border-gray-200">
+                                    @if($reading['status'] === 'complete')
+                                    <flux:badge color="green" size="sm" inset="top bottom">
+                                        <span class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            Пълен
+                                        </span>
+                                    </flux:badge>
+                                    @elseif($reading['status'] === 'partial')
+                                    <flux:badge color="yellow" size="sm" inset="top bottom" variant="solid">
+                                        <span class="flex items-center">
+                                            <span class="text-xs font-medium">{{ $reading['submitted'] }}/{{ $reading['total'] }}</span>
+                                        </span>
+                                    </flux:badge>
+                                    @else
+                                    <flux:badge color="red" size="sm" inset="top bottom" variant="solid">
+                                        <span class="flex items-center">
+                                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512">
+                                                <path d="M96 64c0-17.7-14.3-32-32-32S32 46.3 32 64l0 256c0 17.7 14.3 32 32 32s32-14.3 32-32L96 64zM64 480a40 40 0 1 0 0-80 40 40 0 1 0 0 80z" fill="currentColor" />
+                                            </svg>
+                                            Няма
+                                        </span>
+                                    </flux:badge>
+                                    @endif
+                                </flux:table.cell>
+                                @endforeach
+                            </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-6 text-sm mt-4">

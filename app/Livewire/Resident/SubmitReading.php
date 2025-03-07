@@ -79,7 +79,12 @@ class SubmitReading extends Component
         // Handle photo upload if provided
         $photoPath = null;
         if ($this->photo) {
-            $photoPath = $this->photo->store('reading-photos', 'public');
+            // Use the centralized method to store the photo
+            $photoPath = Reading::storeUploadedPhoto(
+                $this->photo, 
+                $this->meterId, 
+                $this->readingDate
+            );
         }
 
         // Create the reading

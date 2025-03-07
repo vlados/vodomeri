@@ -198,8 +198,16 @@ class SubmitMultipleReadings extends Component
             // Get the apartment ID for folder organization
             $apartmentId = $this->selectedApartmentId;
             
-            // Store the photo temporarily with apartment folder
-            $photoPath = $meterData['photo']->store("reading-photos-temp/apartment-{$apartmentId}", 'public');
+            // Store the photo temporarily - we'll append "-temp" to the path
+            // to indicate this is a temporary storage location
+            $photoPath = Reading::storeUploadedPhoto(
+                $meterData['photo'],
+                $meterData['id'],
+                $this->readingDate
+            );
+            
+            // Replace the regular path with a temp path for verification
+            $photoPath = str_replace("reading-photos/", "reading-photos-temp/", $photoPath);
 
             // Analyze the meter reading with OpenAI
             $analysis = $openAiService->analyzeMeterReading(
@@ -258,12 +266,20 @@ class SubmitMultipleReadings extends Component
                         \Storage::disk('public')->copy($tempPath, $photoPath);
                         \Storage::disk('public')->delete($tempPath);
                     } else {
-                        // If temp file doesn't exist, store the original upload
-                        $photoPath = $meterData['photo']->store("reading-photos/{$apartmentFolder}", 'public');
+                        // If temp file doesn't exist, store the original upload with proper organization
+                        $photoPath = Reading::storeUploadedPhoto(
+                            $meterData['photo'],
+                            $meterData['id'],
+                            $this->readingDate
+                        );
                     }
                 } else {
-                    // No verification was done, store the original upload
-                    $photoPath = $meterData['photo']->store("reading-photos/{$apartmentFolder}", 'public');
+                    // No verification was done, store the original upload with proper organization
+                    $photoPath = Reading::storeUploadedPhoto(
+                        $meterData['photo'],
+                        $meterData['id'],
+                        $this->readingDate
+                    );
                 }
             }
 

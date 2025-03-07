@@ -84,6 +84,8 @@ class WaterMeterResource extends Resource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('serial_number')
+                    ->copyable()
+                    ->copyMessage('Serial number copied')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
                     ->badge()

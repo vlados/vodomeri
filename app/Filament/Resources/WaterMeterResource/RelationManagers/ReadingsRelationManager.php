@@ -29,7 +29,16 @@ class ReadingsRelationManager extends RelationManager
                 Forms\Components\FileUpload::make('photo_path')
                     ->label('Photo')
                     ->image()
-                    ->directory('reading-photos')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->saveUploadedFileUsing(function ($file, $record) {
+                        // Get the water meter ID from the owner record
+                        $waterMeter = $this->getOwnerRecord();
+                        $readingDate = $record->reading_date ?? now();
+                        
+                        // Use the centralized method for storing photos
+                        return \App\Models\Reading::storeUploadedPhoto($file, $waterMeter->id, $readingDate);
+                    })
                     ->maxSize(5120) // 5MB
                     ->helperText('Upload a photo of the meter (maximum 5MB)'),
                 Forms\Components\Select::make('status')

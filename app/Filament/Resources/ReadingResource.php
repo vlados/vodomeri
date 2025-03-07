@@ -39,7 +39,20 @@ class ReadingResource extends Resource
                         return "Apt {$record->apartment->number} - {$type} Water ({$record->serial_number})";
                     })
                     ->searchable()
-                    ->required(),
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state) {
+                            // Get the water meter details
+                            $waterMeter = \App\Models\WaterMeter::find($state);
+                            if ($waterMeter) {
+                                $set('water_meter_serial', $waterMeter->serial_number);
+                                $set('apartment_id', $waterMeter->apartment_id);
+                            }
+                        }
+                    }),
+                Forms\Components\Hidden::make('water_meter_serial'),
+                Forms\Components\Hidden::make('apartment_id'),
                 Forms\Components\Select::make('user_id')
                     ->relationship('user', 'name')
                     ->searchable()
@@ -57,6 +70,23 @@ class ReadingResource extends Resource
                     ->step(0.001)
                     ->disabled()
                     ->helperText('This will be calculated automatically'),
+                Forms\Components\FileUpload::make('photo_path')
+                    ->label('Photo')
+                    ->image()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->saveUploadedFileUsing(function ($file, callable $get) {
+                        $waterId = $get('water_meter_id');
+                        $readingDate = $get('reading_date');
+                        
+                        if (!$waterId || !$readingDate) {
+                            return $file->store('reading-photos-temp', 'public');
+                        }
+                        
+                        // Use the centralized method for storing photos
+                        return \App\Models\Reading::storeUploadedPhoto($file, $waterId, $readingDate);
+                    })
+                    ->maxSize(5120), // 5MB
                 Forms\Components\Select::make('status')
                     ->required()
                     ->options([

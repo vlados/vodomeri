@@ -374,7 +374,10 @@ class Dashboard extends Component
         })->values()->all();
 
         // Get all apartments and sort them: first МАГ, then AT, then АП, and within each prefix by numeric part
-        $apartments = Apartment::all()->sort(function($a, $b) {
+        // Option 1: Using Collection sort method
+        // Get apartments sorted by floor and then by type/number using PHP sorting
+        // This avoids PostgreSQL regex issues with Cyrillic characters
+        $apartments = Apartment::orderBy('floor')->get()->sort(function($a, $b) {
             // Define prefix priority (МАГ first, then AT, then АП)
             $prefixPriority = [
                 'МАГ' => 1,
@@ -395,7 +398,7 @@ class Dashboard extends Component
             $priorityA = $prefixPriority[$prefixA] ?? 999; // Default to high number if unknown
             $priorityB = $prefixPriority[$prefixB] ?? 999;
             
-            // First sort by prefix priority
+            // Sort by prefix priority
             if ($priorityA !== $priorityB) {
                 return $priorityA <=> $priorityB;
             }
@@ -406,7 +409,7 @@ class Dashboard extends Component
             
             return $numA <=> $numB;
         });
-
+        
         // Get all water meters
         $waterMeters = WaterMeter::whereNotNull('apartment_id')
             ->with('apartment')

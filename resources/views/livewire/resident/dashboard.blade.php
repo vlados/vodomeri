@@ -40,11 +40,12 @@
             </div>
         </div>
         <div class="grid grid-cols-1 gap-10 md:grid-cols-2">
-            <flux:card class=" space-y-6">
+            <flux:card class="space-y-6">
                 <div>
                     <flux:heading size="xl">Месечна консумация на вода</flux:heading>
                 </div>
 
+                @if(count($chartData) > 1)
                 <flux:chart wire:model="chartData" class="aspect-3/1">
                     <flux:chart.svg>
                         <flux:chart.line curve="none" field="hot" class="text-red-500" name="Топла вода (m³)" />
@@ -71,6 +72,17 @@
                         <flux:chart.tooltip.value field="cold" label="Студена вода" suffix=" m³" />
                     </flux:chart.tooltip>
                 </flux:chart>
+                @else
+                <div class="flex flex-col items-center justify-center p-8 text-center">
+                    <div class="rounded-full bg-blue-50 p-3 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-lg font-medium">Няма данни за консумация на вода</p>
+                    <p class="text-sm text-gray-500 mt-1">Моля, въведете показания на водомерите, за да видите статистика.</p>
+                </div>
+                @endif
             </flux:card>
 
             <!-- Water Loss Chart section -->
@@ -79,6 +91,7 @@
                     <flux:heading size="xl">Общо потребление и загуби</flux:heading>
                 </div>
 
+                @if(count($waterLossData) > 1)
                 <flux:chart wire:model="waterLossData" class="aspect-3/1">
                     <flux:chart.svg>
                         <!-- Cold water metrics -->
@@ -114,6 +127,17 @@
                         <flux:chart.tooltip.value field="hot_water_loss" label="Загуби на топла вода" suffix=" m³" />
                     </flux:chart.tooltip>
                 </flux:chart>
+                @else
+                <div class="flex flex-col items-center justify-center p-8 text-center">
+                    <div class="rounded-full bg-blue-50 p-3 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-lg font-medium">Няма данни за потребление и загуби</p>
+                    <p class="text-sm text-gray-500 mt-1">За този анализ са необходими данни от централните водомери на сградата.</p>
+                </div>
+                @endif
             </flux:card>
 
             <!-- Apartment Readings Table Section -->
@@ -123,6 +147,7 @@
                     <p class="text-sm text-gray-500 mt-1">Състояние на отчетите по месеци и апартаменти</p>
                 </div>
 
+                @if(count($readingsTableData['months']) > 0 && count($readingsTableData['apartments']) > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -141,7 +166,7 @@
                             @foreach($readingsTableData['apartments'] as $apartment)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white">
-                                    Етаж {{ $apartment['floor'] }}, Ап. {{ $apartment['number'] }}
+                                    Етаж {{ $apartment['floor'] }}, {{ $apartment['number'] }}
                                 </td>
                                 @foreach($apartment['readings'] as $reading)
                                 <td class="px-3 py-2 whitespace-nowrap text-sm text-center">
@@ -174,7 +199,7 @@
                     </table>
                 </div>
 
-                <div class="flex items-center space-x-6 text-sm mt-4">
+                <div class="flex flex-wrap items-center gap-6 text-sm mt-4">
                     <div class="flex items-center">
                         <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 mr-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
@@ -198,6 +223,17 @@
                         <span>Няма показания</span>
                     </div>
                 </div>
+                @else
+                <div class="flex flex-col items-center justify-center p-8 text-center">
+                    <div class="rounded-full bg-blue-50 p-3 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-lg font-medium">Няма данни за отчети на апартаменти</p>
+                    <p class="text-sm text-gray-500 mt-1">За да видите статистика, въведете показания на водомерите.</p>
+                </div>
+                @endif
             </flux:card>
         </div>
 

@@ -81,23 +81,28 @@ class Dashboard extends Component
             ->orderBy('month');
 
         $results = $query->get();
-
-        // Generate all months in the period
-        $months = [];
-        $currentDate = clone $startDate;
-        $endDate = now();
-
-        while ($currentDate->lte($endDate)) {
-            $months[] = [
-                'date' => $currentDate->format('Y-m-d'),
-                'label' => $currentDate->format('M Y'),
-                'year' => $currentDate->year,
-                'month' => $currentDate->month,
-                'hot' => 0,
-                'cold' => 0,
-            ];
-            $currentDate->addMonth();
+        
+        // Get unique month/year combinations from results
+        $uniqueMonths = collect();
+        foreach ($results as $result) {
+            $key = $result->year . '-' . $result->month;
+            if (!$uniqueMonths->contains('key', $key)) {
+                $uniqueMonths->push([
+                    'key' => $key,
+                    'year' => (int)$result->year,
+                    'month' => (int)$result->month,
+                    'date' => Carbon::createFromDate($result->year, $result->month, 1)->format('Y-m-d'),
+                    'label' => Carbon::createFromDate($result->year, $result->month, 1)->format('M Y'),
+                    'hot' => 0,
+                    'cold' => 0
+                ]);
+            }
         }
+        
+        // Sort months chronologically
+        $months = $uniqueMonths->sortBy(function ($month) {
+            return $month['year'] * 100 + $month['month']; // Sort by year and month
+        })->values()->all();
 
         // Fill in actual data where available
         foreach ($results as $result) {
@@ -109,7 +114,7 @@ class Dashboard extends Component
                 if ($monthData['year'] == $year && $monthData['month'] == $month) {
                     if ($result->type === 'hot') {
                         $monthData['hot'] = (float) $result->total_consumption;
-                    } else {
+                    } elseif ($result->type === 'cold') {
                         $monthData['cold'] = (float) $result->total_consumption;
                     }
                     break;
@@ -147,26 +152,8 @@ class Dashboard extends Component
                 break;
         }
 
-        // Generate all months in the period
-        $months = [];
-        $currentDate = clone $startDate;
-        $endDate = now();
-
-        while ($currentDate->lte($endDate)) {
-            $months[] = [
-                'date' => $currentDate->format('Y-m-d'),
-                'label' => $currentDate->format('M Y'),
-                'year' => $currentDate->year,
-                'month' => $currentDate->month,
-                'cold_water_loss' => 0,
-                'hot_water_loss' => 0,
-            ];
-            $currentDate->addMonth();
-        }
-
         // Get central cold water meter readings
         $centralColdMeters = WaterMeter::where('type', 'central-cold')->pluck('id');
-
         $centralColdReadings = Reading::whereIn('water_meter_id', $centralColdMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
@@ -181,7 +168,6 @@ class Dashboard extends Component
 
         // Get central hot water meter readings
         $centralHotMeters = WaterMeter::where('type', 'central-hot')->pluck('id');
-
         $centralHotReadings = Reading::whereIn('water_meter_id', $centralHotMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
@@ -198,7 +184,6 @@ class Dashboard extends Component
         $apartmentColdMeters = WaterMeter::where('type', 'cold')
             ->whereNotNull('apartment_id')
             ->pluck('id');
-
         $apartmentColdReadings = Reading::whereIn('water_meter_id', $apartmentColdMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
@@ -215,7 +200,6 @@ class Dashboard extends Component
         $apartmentHotMeters = WaterMeter::where('type', 'hot')
             ->whereNotNull('apartment_id')
             ->pluck('id');
-
         $apartmentHotReadings = Reading::whereIn('water_meter_id', $apartmentHotMeters)
             ->where('reading_date', '>=', $startDate)
             ->select(
@@ -227,6 +211,37 @@ class Dashboard extends Component
             ->orderBy('year')
             ->orderBy('month')
             ->get();
+            
+        // Combine all readings to identify unique months with data
+        $allReadings = collect()
+            ->merge($centralColdReadings)
+            ->merge($centralHotReadings)
+            ->merge($apartmentColdReadings)
+            ->merge($apartmentHotReadings);
+            
+        // Extract unique year-month combinations
+        $uniqueMonths = collect();
+        foreach ($allReadings as $reading) {
+            $key = $reading->year . '-' . $reading->month;
+            if (!$uniqueMonths->contains('key', $key)) {
+                $uniqueMonths->push([
+                    'key' => $key,
+                    'year' => (int)$reading->year,
+                    'month' => (int)$reading->month,
+                    'date' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('Y-m-d'),
+                    'label' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('M Y'),
+                    'cold_water_loss' => 0,
+                    'hot_water_loss' => 0,
+                    'cold_water_total' => 0,
+                    'hot_water_total' => 0,
+                ]);
+            }
+        }
+        
+        // Sort months chronologically
+        $months = $uniqueMonths->sortBy(function ($month) {
+            return $month['year'] * 100 + $month['month']; // Sort by year and month
+        })->values()->all();
 
         // Calculate water loss for each month
         foreach ($months as &$monthData) {
@@ -328,24 +343,69 @@ class Dashboard extends Component
                 $startDate = now()->subMonths(12)->startOfMonth();
                 break;
         }
-
-        // Generate all months in the period
-        $months = [];
-        $currentDate = clone $startDate;
-        $endDate = now()->endOfMonth();
-
-        while ($currentDate->lte($endDate)) {
-            $months[] = [
-                'date' => $currentDate->format('Y-m-d'),
-                'label' => $currentDate->format('M Y'),
-                'year' => $currentDate->year,
-                'month' => $currentDate->month,
-            ];
-            $currentDate->addMonth();
+        
+        // Get readings within the date range to identify months with data
+        $readings = Reading::where('reading_date', '>=', $startDate)
+            ->select(
+                DB::raw('EXTRACT(YEAR FROM reading_date) as year'),
+                DB::raw('EXTRACT(MONTH FROM reading_date) as month')
+            )
+            ->distinct()
+            ->get();
+            
+        // Extract unique months with data
+        $uniqueMonths = collect();
+        foreach ($readings as $reading) {
+            $key = $reading->year . '-' . $reading->month;
+            if (!$uniqueMonths->contains('key', $key)) {
+                $uniqueMonths->push([
+                    'key' => $key,
+                    'date' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('Y-m-d'),
+                    'label' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('M Y'),
+                    'year' => (int)$reading->year,
+                    'month' => (int)$reading->month,
+                ]);
+            }
         }
+        
+        // Sort months chronologically
+        $months = $uniqueMonths->sortBy(function ($month) {
+            return $month['year'] * 100 + $month['month']; // Sort by year and month
+        })->values()->all();
 
-        // Get all apartments
-        $apartments = Apartment::orderBy('floor')->orderBy('number')->get();
+        // Get all apartments and sort them: first МАГ, then AT, then АП, and within each prefix by numeric part
+        $apartments = Apartment::all()->sort(function($a, $b) {
+            // Define prefix priority (МАГ first, then AT, then АП)
+            $prefixPriority = [
+                'МАГ' => 1,
+                'AT' => 2,
+                'АП' => 3,
+                'АT' => 2,  // Alternative spelling
+                'AP' => 3   // Alternative spelling
+            ];
+            
+            // Extract prefix and number from apartment numbers
+            preg_match('/([^\d]+)(\d+)/', $a->number, $matchesA);
+            preg_match('/([^\d]+)(\d+)/', $b->number, $matchesB);
+            
+            $prefixA = isset($matchesA[1]) ? trim($matchesA[1]) : '';
+            $prefixB = isset($matchesB[1]) ? trim($matchesB[1]) : '';
+            
+            // Get priority for each prefix
+            $priorityA = $prefixPriority[$prefixA] ?? 999; // Default to high number if unknown
+            $priorityB = $prefixPriority[$prefixB] ?? 999;
+            
+            // First sort by prefix priority
+            if ($priorityA !== $priorityB) {
+                return $priorityA <=> $priorityB;
+            }
+            
+            // If same prefix, sort by numeric part
+            $numA = isset($matchesA[2]) ? (int)$matchesA[2] : 0;
+            $numB = isset($matchesB[2]) ? (int)$matchesB[2] : 0;
+            
+            return $numA <=> $numB;
+        });
 
         // Get all water meters
         $waterMeters = WaterMeter::whereNotNull('apartment_id')

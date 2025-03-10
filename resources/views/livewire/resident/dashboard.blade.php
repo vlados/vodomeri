@@ -163,7 +163,10 @@
                             @foreach($readingsTableData['apartments'] as $apartment)
                             <flux:table.row>
                                 <flux:table.cell pin="left" variant="strong">
-                                    Етаж {{ $apartment['floor'] }}, {{ $apartment['number'] }}
+                                    {{ $apartment['name'] }}
+                                    <div class="text-xs text-gray-500">
+                                        {{ $apartment['owner'] }}
+                                    </div>
                                 </flux:table.cell>
                                 @foreach($apartment['readings'] as $reading)
                                 <flux:table.cell class="text-center border-l border-gray-200">

@@ -440,6 +440,7 @@ class Dashboard extends Component
                 'floor' => $apartment->floor,
                 'number' => $apartment->number,
                 'name' => "Етаж {$apartment->floor}, Ап. {$apartment->number}",
+                'owner' => $apartment->owner_name,
                 'readings' => [],
             ];
 

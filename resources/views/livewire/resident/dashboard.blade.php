@@ -151,7 +151,11 @@
                 <div class="overflow-x-auto">
                     <flux:table>
                         <flux:table.columns>
-                            <flux:table.column pin="left">Апартамент</flux:table.column>
+                            <flux:table.column pin="left" sortable :sorted="$sortBy === 'floor'" :direction="$sortDirection" wire:click="sort('floor')">Етаж</flux:table.column>
+                            <flux:table.column pin="left" sortable :sorted="$sortBy === 'number'" :direction="$sortDirection" wire:click="sort('number')">Апартамент</flux:table.column>
+                            <flux:table.column pin="left" sortable :sorted="$sortBy === 'owner'" :direction="$sortDirection" wire:click="sort('owner')">Собственик</flux:table.column>
+                            <flux:table.column pin="left" sortable :sorted="$sortBy === 'has_water_meters'" :direction="$sortDirection" wire:click="sort('has_water_meters')">Водомери</flux:table.column>
+                            <flux:table.column pin="left" sortable :sorted="$sortBy === 'latest_reading_date'" :direction="$sortDirection" wire:click="sort('latest_reading_date')">Последен отчет</flux:table.column>
                             @foreach($readingsTableData['months'] as $month)
                             <flux:table.column class="text-center border-l border-gray-200">
                                 <div class="w-full text-center">{{ Carbon\Carbon::parse($month['date'])->translatedFormat('F Y') }}</div>
@@ -162,11 +166,34 @@
                         <flux:table.rows>
                             @foreach($readingsTableData['apartments'] as $apartment)
                             <flux:table.row>
-                                <flux:table.cell pin="left" variant="strong">
-                                    {{ $apartment['name'] }}
-                                    <div class="text-xs text-gray-500">
-                                        {{ $apartment['owner'] }}
-                                    </div>
+                                <flux:table.cell pin="left">
+                                    {{ $apartment['floor'] }}
+                                </flux:table.cell>
+                                <flux:table.cell pin="left">
+                                    {{ $apartment['number'] }}
+                                </flux:table.cell>
+                                <flux:table.cell pin="left">
+                                    {{ $apartment['owner'] }}
+                                </flux:table.cell>
+                                <flux:table.cell pin="left">
+                                    @if($apartment['has_water_meters'])
+                                        <span class="inline-flex items-center text-green-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            {{ $apartment['meter_count'] }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center text-red-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                            Няма
+                                        </span>
+                                    @endif
+                                </flux:table.cell>
+                                <flux:table.cell pin="left">
+                                    {{ $apartment['latest_reading_month'] ?? 'Няма данни' }}
                                 </flux:table.cell>
                                 @foreach($apartment['readings'] as $reading)
                                 <flux:table.cell class="text-center border-l border-gray-200">

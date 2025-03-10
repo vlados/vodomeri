@@ -13,7 +13,9 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     public $selectedPeriod = 'last_6_months';
-
+    public $sortBy = 'floor';
+    public $sortDirection = 'asc';
+    
     public $waterTypes = ['hot', 'cold'];
 
     public function mount()
@@ -373,47 +375,8 @@ class Dashboard extends Component
             return $month['year'] * 100 + $month['month']; // Sort by year and month
         })->values()->all();
 
-        // Get all apartments and sort them: first МАГ, then AT, then АП, and within each prefix by numeric part
-        // Option 1: Using Collection sort method
-        // Get all apartments and sort them by floor, then by type (МАГ, AT, АП), then by number
-        $apartments = Apartment::all()->sort(function($a, $b) {
-            // First sort by floor
-            if ($a->floor !== $b->floor) {
-                return $a->floor <=> $b->floor;
-            }
-            
-            // Define prefix priority (МАГ first, then AT, then АП)
-            $prefixPriority = [
-                'МАГ' => 1,
-                'AT' => 2,
-                'АП' => 3,
-                'АT' => 2,  // Alternative spelling
-                'АТ' => 2,  // Another alternative spelling
-                'AP' => 3   // Alternative spelling
-            ];
-            
-            // Extract prefix and number from apartment numbers
-            preg_match('/([^\d]+)(\d+)/', $a->number, $matchesA);
-            preg_match('/([^\d]+)(\d+)/', $b->number, $matchesB);
-            
-            $prefixA = isset($matchesA[1]) ? trim($matchesA[1]) : '';
-            $prefixB = isset($matchesB[1]) ? trim($matchesB[1]) : '';
-            
-            // Get priority for each prefix
-            $priorityA = $prefixPriority[$prefixA] ?? 999; // Default to high number if unknown
-            $priorityB = $prefixPriority[$prefixB] ?? 999;
-            
-            // Then sort by prefix priority
-            if ($priorityA !== $priorityB) {
-                return $priorityA <=> $priorityB;
-            }
-            
-            // If same prefix, sort by numeric part
-            $numA = isset($matchesA[2]) ? (int)$matchesA[2] : 0;
-            $numB = isset($matchesB[2]) ? (int)$matchesB[2] : 0;
-            
-            return $numA <=> $numB;
-        });
+        // Get all apartments
+        $apartments = Apartment::all();
         
         // Get all water meters
         $waterMeters = WaterMeter::whereNotNull('apartment_id')
@@ -435,23 +398,32 @@ class Dashboard extends Component
 
         // Process each apartment
         foreach ($apartments as $apartment) {
+            // Get the water meters for this apartment
+            $apartmentMeters = $waterMeters[$apartment->id] ?? collect();
+            $meterIds = $apartmentMeters->pluck('id')->toArray();
+            $hasWaterMeters = count($meterIds) > 0;
+            
             $apartmentData = [
                 'id' => $apartment->id,
                 'floor' => $apartment->floor,
                 'number' => $apartment->number,
                 'name' => "Етаж {$apartment->floor}, Ап. {$apartment->number}",
                 'owner' => $apartment->owner_name,
+                'has_water_meters' => $hasWaterMeters,
+                'meter_count' => count($meterIds),
                 'readings' => [],
+                'latest_reading_date' => null,
+                'latest_reading_month' => null,
             ];
 
-            // Get the water meters for this apartment
-            $apartmentMeters = $waterMeters[$apartment->id] ?? collect();
-            $meterIds = $apartmentMeters->pluck('id')->toArray();
+            // Track the latest reading date for sorting
+            $latestReadingDate = null;
 
             // Process each month
             foreach ($months as $month) {
                 $year = $month['year'];
                 $monthNum = $month['month'];
+                $monthDate = Carbon::createFromDate($year, $monthNum, 1);
 
                 // Check if there are readings for this month for any of the apartment's meters
                 $monthReadings = $readings->filter(function ($reading) use ($meterIds, $year, $monthNum) {
@@ -470,6 +442,14 @@ class Dashboard extends Component
                     if (! $uniqueMetersWithReadings->contains($reading->water_meter_id)) {
                         $uniqueMetersWithReadings->push($reading->water_meter_id);
                         $submittedReadings++;
+                        
+                        // Update latest reading date if this is newer
+                        $readingDate = Carbon::parse($reading->reading_date);
+                        if ($latestReadingDate === null || $readingDate->gt($latestReadingDate)) {
+                            $latestReadingDate = $readingDate;
+                            $apartmentData['latest_reading_date'] = $readingDate->format('Y-m-d');
+                            $apartmentData['latest_reading_month'] = $readingDate->format('M Y');
+                        }
                     }
                 }
 
@@ -496,8 +476,78 @@ class Dashboard extends Component
 
             $tableData['apartments'][] = $apartmentData;
         }
+        
+        // Sort apartments based on the selected field and direction
+        $sortField = $this->sortBy;
+        $sortDirection = $this->sortDirection;
+        
+        usort($tableData['apartments'], function ($a, $b) use ($sortField, $sortDirection) {
+            $valueA = $a[$sortField] ?? '';
+            $valueB = $b[$sortField] ?? '';
+            
+            // Special case for apartment number - sort by floor first, then by number
+            if ($sortField === 'number') {
+                // Extract numeric part for comparison
+                preg_match('/([^\d]+)(\d+)/', $valueA, $matchesA);
+                preg_match('/([^\d]+)(\d+)/', $valueB, $matchesB);
+                
+                $prefixA = isset($matchesA[1]) ? trim($matchesA[1]) : '';
+                $prefixB = isset($matchesB[1]) ? trim($matchesB[1]) : '';
+                
+                $numA = isset($matchesA[2]) ? (int)$matchesA[2] : 0;
+                $numB = isset($matchesB[2]) ? (int)$matchesB[2] : 0;
+                
+                // Define prefix priority
+                $prefixPriority = [
+                    'МАГ' => 1,
+                    'AT' => 2,
+                    'АП' => 3,
+                    'АT' => 2,
+                    'АТ' => 2,
+                    'AP' => 3
+                ];
+                
+                $priorityA = $prefixPriority[$prefixA] ?? 999;
+                $priorityB = $prefixPriority[$prefixB] ?? 999;
+                
+                // First compare by prefix priority
+                if ($priorityA !== $priorityB) {
+                    $comparison = $priorityA <=> $priorityB;
+                } else {
+                    // Then by numeric part
+                    $comparison = $numA <=> $numB;
+                }
+            } else if ($sortField === 'latest_reading_date') {
+                // Handle null dates
+                if ($valueA === null && $valueB === null) {
+                    $comparison = 0;
+                } else if ($valueA === null) {
+                    $comparison = -1;
+                } else if ($valueB === null) {
+                    $comparison = 1;
+                } else {
+                    $comparison = strcmp($valueA, $valueB);
+                }
+            } else {
+                $comparison = is_numeric($valueA) && is_numeric($valueB) 
+                    ? $valueA <=> $valueB 
+                    : strcmp($valueA, $valueB);
+            }
+            
+            return $sortDirection === 'asc' ? $comparison : -$comparison;
+        });
 
         return $tableData;
+    }
+    
+    public function sort($column)
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function render()

@@ -47,6 +47,10 @@ class ReadingsRelationManager extends RelationManager
                     ->image()
                     ->disk('public')
                     ->visibility('public')
+                    ->imageEditor()
+                    ->imagePreviewHeight('250')
+                    ->panelAspectRatio('16:9')
+                    ->panelLayout('integrated')
                     ->reactive()
                     ->saveUploadedFileUsing(function ($file, callable $get) {
                         $waterId = $get('water_meter_id');
@@ -59,17 +63,9 @@ class ReadingsRelationManager extends RelationManager
                         // Use the centralized method for storing photos
                         return \App\Models\Reading::storeUploadedPhoto($file, $waterId, $readingDate);
                     })
-                    ->maxSize(5120), // 5MB
-                Forms\Components\Select::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                    ])
-                    ->default('pending')
-                    ->disabled(),
-                Forms\Components\Textarea::make('notes')
-                    ->maxLength(255),
+                    ->required()
+                    ->maxSize(5120) // 5MB
+                    ->helperText('Upload a clear photo of the meter reading display showing all digits (maximum 5MB)'),
             ]);
     }
 
@@ -109,22 +105,12 @@ class ReadingsRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\ImageColumn::make('photo_path')
                     ->label('Photo')
-                    ->circular(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'approved' => 'success',
-                        'pending' => 'warning',
-                        'rejected' => 'danger',
-                    }),
+                    ->disk('public')
+                    ->visibility('public')
+                    ->size(100)
+                    ->square(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                    ]),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make(),

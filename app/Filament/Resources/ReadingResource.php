@@ -75,6 +75,10 @@ class ReadingResource extends Resource
                     ->image()
                     ->disk('public')
                     ->visibility('public')
+                    ->imageEditor()
+                    ->imagePreviewHeight('250')
+                    ->panelAspectRatio('16:9')
+                    ->panelLayout('integrated')
                     ->saveUploadedFileUsing(function ($file, callable $get) {
                         $waterId = $get('water_meter_id');
                         $readingDate = $get('reading_date');
@@ -86,17 +90,9 @@ class ReadingResource extends Resource
                         // Use the centralized method for storing photos
                         return \App\Models\Reading::storeUploadedPhoto($file, $waterId, $readingDate);
                     })
-                    ->maxSize(5120), // 5MB
-                Forms\Components\Select::make('status')
                     ->required()
-                    ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                    ])
-                    ->default('pending'),
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
+                    ->maxSize(5120) // 5MB
+                    ->helperText('Upload a clear photo of the meter reading display showing all digits (maximum 5MB)'),
             ]);
     }
 
@@ -136,13 +132,12 @@ class ReadingResource extends Resource
                 Tables\Columns\TextColumn::make('consumption')
                     ->numeric(3)
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'approved' => 'success',
-                        'pending' => 'warning',
-                        'rejected' => 'danger',
-                    }),
+                Tables\Columns\ImageColumn::make('photo_path')
+                    ->label('Photo')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->size(100)
+                    ->square(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Submitted By')
                     ->sortable()
@@ -178,12 +173,6 @@ class ReadingResource extends Resource
                     }),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                    ]),
                 Tables\Filters\SelectFilter::make('month')
                     ->options([
                         '01' => 'January',
@@ -238,23 +227,6 @@ class ReadingResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (Reading $record) => $record->status === 'pending')
-                    ->action(function (Reading $record) {
-                        $record->update(['status' => 'approved']);
-                    }),
-                Tables\Actions\Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->visible(fn (Reading $record) => $record->status === 'pending')
-                    ->action(function (Reading $record) {
-                        $record->update(['status' => 'rejected']);
-                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

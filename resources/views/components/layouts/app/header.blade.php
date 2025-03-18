@@ -23,7 +23,7 @@
             
             <!-- Report Bug Button -->
                 @livewire('report-bug')
-
+                
             <!-- Desktop User Menu -->
             <flux:dropdown position="top" align="end">
                 <flux:profile
@@ -100,6 +100,19 @@
             <div class="px-3 py-2">
                 @livewire('report-bug')
             </div>
+            
+            <!-- Mobile Admin Link (if user is admin) -->
+            @if(auth()->user()->hasRole('admin'))
+            <div class="px-3 py-2">
+                <a href="{{ url('/admin') }}" class="inline-flex w-full items-center justify-center rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 ring-1 ring-inset ring-blue-500/10 hover:bg-blue-100 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-400/20" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 4.5a2.25 2.25 0 0 0-2.25 2.25v.5A2.25 2.25 0 0 0 12 9.5a2.25 2.25 0 0 0 2.25-2.25v-.5A2.25 2.25 0 0 0 12 4.5ZM15.75 8.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5h-3.75ZM15.75 14.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5h-3.75ZM4.5 8.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H4.5ZM4.5 14.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H4.5Z" />
+                        <path d="M17.25 12.75v-.75a2.25 2.25 0 0 0-2.25-2.25h-6a2.25 2.25 0 0 0-2.25 2.25v.75a2.25 2.25 0 0 0 2.25 2.25h6a2.25 2.25 0 0 0 2.25-2.25Z" />
+                    </svg>
+                    {{ __('Администрация') }}
+                </a>
+            </div>
+            @endif
 
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="Профил">

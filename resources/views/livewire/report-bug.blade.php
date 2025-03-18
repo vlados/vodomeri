@@ -1,8 +1,13 @@
 <div class="max-lg:hidden">
-    <flux:navlist variant="outline">
-        <flux:navlist.item icon="bug-ant" wire:click="openModal" >
-        Докладвай проблем
+    <flux:navlist variant="outline" class="w-fit flex-row">
+        <flux:navlist.item icon="chat-bubble-bottom-center-text" wire:click="openModal">
+            Докладвай проблем
         </flux:navlist.item>
+        @if(auth()->user()->hasRole('admin'))
+        <flux:navlist.item href="admin" target="_blank">
+            Admin
+        </flux:navlist.item>
+        @endif
     </flux:navlist>
 
 
@@ -10,9 +15,9 @@
     <flux:modal title="Докладване на грешка" wire:model="isOpen">
         <div class="space-y-4">
             @if (session()->has('success'))
-                <div class="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 mb-4">
-                    {{ session('success') }}
-                </div>
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 mb-4">
+                {{ session('success') }}
+            </div>
             @endif
 
             <p class="text-gray-600 mb-4">
@@ -20,25 +25,22 @@
             </p>
 
             <form wire:submit="submit" class="space-y-4">
-                <flux:input 
-                    wire:model="title" 
+                <flux:input
+                    wire:model="title"
                     label="Заглавие"
-                    placeholder="Кратко описание на проблема"
-                />
+                    placeholder="Кратко описание на проблема" />
 
-                <flux:textarea 
-                    wire:model="description" 
+                <flux:textarea
+                    wire:model="description"
                     label="Описание на проблема"
                     placeholder="Опишете подробно какво се случи"
-                    rows="4"
-                />
+                    rows="4" />
 
-                <flux:textarea 
-                    wire:model="stepsToReproduce" 
+                <flux:textarea
+                    wire:model="stepsToReproduce"
                     label="Стъпки за възпроизвеждане (по избор)"
                     placeholder="Опишете стъпките, необходими за възпроизвеждане на проблема"
-                    rows="3"
-                />
+                    rows="3" />
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Екранна снимка (по избор)</label>
@@ -48,11 +50,11 @@
                         file:text-sm file:font-semibold
                         file:bg-gray-50 file:text-blue-600
                         hover:file:bg-blue-50
-                    "/>
+                    " />
                 </div>
 
                 <div class="mt-6 flex justify-end space-x-3">
-                    <flux:button  wire:click="closeModal" type="button">
+                    <flux:button wire:click="closeModal" type="button">
                         Отказ
                     </flux:button>
                     <flux:button type="submit" variant="primary">

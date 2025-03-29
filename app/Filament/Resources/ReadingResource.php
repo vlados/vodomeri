@@ -2,16 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\ReadingExporter;
 use App\Filament\Resources\ReadingResource\Pages;
 use App\Models\Reading;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Tables\Actions\ExportAction;
-use App\Filament\Exports\ReadingExporter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class ReadingResource extends Resource
 {
@@ -82,11 +84,11 @@ class ReadingResource extends Resource
                     ->saveUploadedFileUsing(function ($file, callable $get) {
                         $waterId = $get('water_meter_id');
                         $readingDate = $get('reading_date');
-                        
-                        if (!$waterId || !$readingDate) {
+
+                        if (! $waterId || ! $readingDate) {
                             return $file->store('reading-photos-temp', 'public');
                         }
-                        
+
                         // Use the centralized method for storing photos
                         return \App\Models\Reading::storeUploadedPhoto($file, $waterId, $readingDate);
                     })
@@ -154,18 +156,18 @@ class ReadingResource extends Resource
                         // Get filter values from the current request
                         $request = request();
                         $tableFilters = $request->get('tableFilters', []);
-                        
+
                         $month = $tableFilters['month'] ?? null;
                         $year = $tableFilters['year'] ?? null;
-                        
+
                         if (is_array($month)) {
                             $month = $month['value'] ?? null;
                         }
-                        
+
                         if (is_array($year)) {
                             $year = $year['value'] ?? null;
                         }
-                        
+
                         return [
                             'month' => $month,
                             'year' => $year,
@@ -231,6 +233,28 @@ class ReadingResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('change_date')
+                        ->label('Change Date')
+                        ->icon('heroicon-o-calendar')
+                        ->form([
+                            Forms\Components\DatePicker::make('new_date')
+                                ->label('New Reading Date')
+                                ->required()
+                                ->default(now()),
+                        ])
+                        ->action(function (Collection $records, array $data) {
+                            foreach ($records as $record) {
+                                $record->update([
+                                    'reading_date' => $data['new_date'],
+                                ]);
+                            }
+                        })
+                        ->successNotification(
+                            notification: Notification::make()
+                                ->success()
+                                ->title('Reading dates updated')
+                                ->body('The dates for the selected readings have been updated successfully.'),
+                        ),
                 ]),
             ]);
     }

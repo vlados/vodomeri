@@ -4,14 +4,18 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
+use App\Mail\ReadingReminderMail;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
 
 class UserResource extends Resource
@@ -111,6 +115,62 @@ class UserResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('send_reading_reminder')
+                        ->label('Send Reading Reminder')
+                        ->icon('heroicon-o-envelope')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion()
+                        ->action(function (Collection $records) {
+                            $sent = 0;
+                            $failed = 0;
+                            $errors = [];
+
+                            foreach ($records as $user) {
+                                // Skip users without apartments/water meters
+                                $waterMeterCount = $user->apartments->flatMap->waterMeters->count();
+                                if ($waterMeterCount === 0) {
+                                    $failed++;
+                                    $errors[] = "User {$user->name} has no water meters";
+
+                                    continue;
+                                }
+
+                                try {
+                                    Mail::to($user)->send(new ReadingReminderMail($user));
+                                    $sent++;
+                                } catch (\Exception $e) {
+                                    $failed++;
+                                    $errors[] = "Failed to send to {$user->name}: ".$e->getMessage();
+                                }
+                            }
+
+                            $message = "Reminded {$sent} users to enter readings";
+                            if ($failed > 0) {
+                                $message .= " ({$failed} failed)";
+                            }
+
+                            // Log errors for admin troubleshooting
+                            if (! empty($errors)) {
+                                \Log::warning('Reading reminder errors: '.implode('; ', array_slice($errors, 0, 3)));
+
+                                if ($sent === 0 && $failed > 0) {
+                                    Notification::make()
+                                        ->danger()
+                                        ->title('Reminders Failed')
+                                        ->body($message.'. Check application logs for details.')
+                                        ->send();
+
+                                    return;
+                                }
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Reminders Sent')
+                                ->body($message)
+                                ->send();
+                        }),
                 ]),
             ]);
     }

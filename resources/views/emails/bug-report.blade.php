@@ -1,4 +1,4 @@
-<x-mail::message>
+@component('mail::message')
 # Нов доклад за грешка: {{ $bug->title }}
 
 Потребител **{{ $bug->user->name }}** ({{ $bug->user->email }}) докладва нова грешка.
@@ -19,10 +19,10 @@
 ## Дата и час
 {{ $bug->created_at->format('d.m.Y H:i:s') }}
 
-<x-mail::button :url="config('app.url') . '/admin'">
+@component('mail::button', ['url' => config('app.url') . '/admin'])
 Преглед в администрацията
-</x-mail::button>
+@endcomponent
 
 Поздрави,<br>
 {{ config('app.name') }}
-</x-mail::message>
+@endcomponent

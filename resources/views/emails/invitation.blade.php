@@ -1,4 +1,4 @@
-<x-mail::message>
+@component('mail::message')
 # Покана за Водомери
 
 Поканени сте да се присъедините към системата за отчитане на водомери Водомери за **Апартамент {{ $apartmentNumber }}**.
@@ -10,9 +10,9 @@
 
 Натиснете бутона по-долу, за да приемете поканата и да създадете своя акаунт:
 
-<x-mail::button :url="$invitationUrl">
+@component('mail::button', ['url' => $invitationUrl])
 Приеми поканата
-</x-mail::button>
+@endcomponent
 
 Тази покана ще изтече на: **{{ $expiresAt }}**
 
@@ -20,4 +20,4 @@
 
 Поздрави,<br>
 {{ config('app.name') }}
-</x-mail::message>
+@endcomponent

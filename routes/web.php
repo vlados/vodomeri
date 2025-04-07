@@ -65,4 +65,6 @@ Route::middleware(['auth'])->group(function () {
 // Impersonation routes
 Route::impersonate();
 
+// Reports are now handled by Filament admin panel
+
 require __DIR__.'/auth.php';

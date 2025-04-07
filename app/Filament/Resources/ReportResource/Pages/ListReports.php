@@ -25,63 +25,27 @@ class ListReports extends Page
 
     protected function getHeaderActions(): array
     {
-        return [
-            Action::make('generate')
-                ->label('Създаване на справка')
-                ->form(fn (Action $action): array => [
-                    Select::make('report_type')
-                        ->label('Тип справка')
-                        ->options([
-                            'hot_water' => 'Гореща вода',
-                        ])
-                        ->required(),
-
-                    Select::make('month')
-                        ->label('Месец')
-                        ->options([
-                            '1' => 'Януари',
-                            '2' => 'Февруари',
-                            '3' => 'Март',
-                            '4' => 'Април',
-                            '5' => 'Май',
-                            '6' => 'Юни',
-                            '7' => 'Юли',
-                            '8' => 'Август',
-                            '9' => 'Септември',
-                            '10' => 'Октомври',
-                            '11' => 'Ноември',
-                            '12' => 'Декември',
-                        ])
-                        ->default(now()->month)
-                        ->required(),
-
-                    Select::make('year')
-                        ->label('Година')
-                        ->options(function () {
-                            $currentYear = now()->year;
-                            $years = [];
-                            for ($i = 0; $i <= 5; $i++) {
-                                $year = $currentYear - $i;
-                                $years[$year] = $year;
-                            }
-                            return $years;
-                        })
-                        ->default(now()->year)
-                        ->required(),
-                ])
-                ->action(function (array $data) {
-                    return $this->generateReport($data);
-                })
-        ];
+        return []; // Empty array since we're handling actions via custom UI
     }
     
-    public function generateReport(array $data)
+    // No need for the __invoke method anymore
+    
+    /**
+     * Generate report from request parameters
+     */
+    public function generateReport()
     {
+        $data = request()->validate([
+            'report_type' => 'required|in:hot_water,cold_water',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        ]);
+        
         $reportType = $data['report_type'];
         $year = $data['year'];
         $month = $data['month'];
         
-        // Get all apartments with hot water meters
+        // Get all apartments with the specified water meter type
         $apartments = Apartment::with(['waterMeters' => function ($query) use ($reportType) {
             if ($reportType === 'hot_water') {
                 $query->where('type', 'hot');

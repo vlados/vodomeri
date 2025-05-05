@@ -6,6 +6,7 @@ use App\Models\Reading;
 use App\Models\WaterMeter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -105,6 +106,10 @@ class SubmitReading extends Component
 
     public function render()
     {
-        return view('livewire.resident.submit-reading');
+        $title = 'Въвеждане на показание';
+        View::share("title", $title);
+        return view('livewire.resident.submit-reading', [
+            'title' => $title
+        ]);
     }
 }

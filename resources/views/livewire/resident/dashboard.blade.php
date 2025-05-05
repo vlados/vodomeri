@@ -46,7 +46,7 @@
                     <x-fas-pen-to-square class="w-4 h-4 mr-2" />
                     Стандартен отчет
                 </flux:button>
-                
+
                 <flux:button href="{{ route('readings.bulk-upload') }}" size="sm" variant="primary"
                              class="w-full justify-center sm:w-auto sm:justify-start">
                     <x-fas-camera class="w-4 h-4 mr-2" />

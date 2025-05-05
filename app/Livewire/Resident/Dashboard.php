@@ -8,6 +8,7 @@ use App\Models\WaterMeter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -640,21 +641,21 @@ class Dashboard extends Component
             $centralValue = $selectedMonthData['cold_water_total'];
             $apartmentValue = $selectedMonthData['apartment_cold_consumption'];
             $lossValue = $selectedMonthData['cold_water_loss'];
-            
+
             $prevCentralValue = $previousMonthData ? $previousMonthData['cold_water_total'] : 0;
             $prevApartmentValue = $previousMonthData ? $previousMonthData['apartment_cold_consumption'] : 0;
             $prevLossValue = $previousMonthData ? $previousMonthData['cold_water_loss'] : 0;
-            
-            $centralTrend = $prevCentralValue > 0 ? 
+
+            $centralTrend = $prevCentralValue > 0 ?
                 round(($centralValue - $prevCentralValue) / $prevCentralValue * 100, 1) : 0;
-            $apartmentTrend = $prevApartmentValue > 0 ? 
+            $apartmentTrend = $prevApartmentValue > 0 ?
                 round(($apartmentValue - $prevApartmentValue) / $prevApartmentValue * 100, 1) : 0;
-            $lossTrend = $prevLossValue > 0 ? 
+            $lossTrend = $prevLossValue > 0 ?
                 round(($lossValue - $prevLossValue) / $prevLossValue * 100, 1) : 0;
-            
+
             // Average trend (for the card's trend indicator)
             $avgTrend = ($centralTrend + $apartmentTrend + $lossTrend) / 3;
-            
+
             $stats[] = [
                 'title' => 'Студена вода',
                 'value' => number_format($centralValue, 1) . ' / ' . number_format($apartmentValue, 1) . ' / ' . number_format($lossValue, 1),
@@ -665,27 +666,27 @@ class Dashboard extends Component
                 'column' => 1
             ];
         }
-        
+
         // Combined Hot Water Stats (Column 2)
         if ($selectedMonthData) {
             $centralValue = $selectedMonthData['hot_water_total'];
             $apartmentValue = $selectedMonthData['apartment_hot_consumption'];
             $lossValue = $selectedMonthData['hot_water_loss'];
-            
+
             $prevCentralValue = $previousMonthData ? $previousMonthData['hot_water_total'] : 0;
             $prevApartmentValue = $previousMonthData ? $previousMonthData['apartment_hot_consumption'] : 0;
             $prevLossValue = $previousMonthData ? $previousMonthData['hot_water_loss'] : 0;
-            
-            $centralTrend = $prevCentralValue > 0 ? 
+
+            $centralTrend = $prevCentralValue > 0 ?
                 round(($centralValue - $prevCentralValue) / $prevCentralValue * 100, 1) : 0;
-            $apartmentTrend = $prevApartmentValue > 0 ? 
+            $apartmentTrend = $prevApartmentValue > 0 ?
                 round(($apartmentValue - $prevApartmentValue) / $prevApartmentValue * 100, 1) : 0;
-            $lossTrend = $prevLossValue > 0 ? 
+            $lossTrend = $prevLossValue > 0 ?
                 round(($lossValue - $prevLossValue) / $prevLossValue * 100, 1) : 0;
-            
+
             // Average trend (for the card's trend indicator)
             $avgTrend = ($centralTrend + $apartmentTrend + $lossTrend) / 3;
-            
+
             $stats[] = [
                 'title' => 'Топла вода',
                 'value' => number_format($centralValue, 1) . ' / ' . number_format($apartmentValue, 1) . ' / ' . number_format($lossValue, 1),
@@ -702,6 +703,7 @@ class Dashboard extends Component
 
     public function render()
     {
+        $title = 'Табло за управление';
         $user = Auth::user();
 
         // Get apartments associated with this user
@@ -730,8 +732,10 @@ class Dashboard extends Component
 
         // Get the readings status table data
         $readingsTableData = $this->getApartmentReadingsTable();
+        View::share("title", $title);
 
         return view('livewire.resident.dashboard', [
+            'title' => $title,
             'apartments' => $apartments,
             'metersByApartment' => $metersByApartment,
             'maxValue' => $maxValue,

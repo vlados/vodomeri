@@ -4,6 +4,7 @@ namespace App\Livewire\Resident;
 
 use App\Models\WaterMeter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -129,6 +130,8 @@ class WaterMetersList extends Component
 
     public function render()
     {
+        $title = 'Списък с водомери';
+        View::share("title", $title);
         $user = Auth::user();
         $userApartmentIds = $user->apartments->pluck('id')->toArray();
 
@@ -147,6 +150,7 @@ class WaterMetersList extends Component
             ->paginate(10);
 
         return view('livewire.resident.water-meters-list', [
+            'title' => $title,
             'waterMeters' => $waterMeters,
         ]);
     }

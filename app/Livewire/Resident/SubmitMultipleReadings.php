@@ -8,6 +8,7 @@ use App\Services\OpenAIService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -342,6 +343,10 @@ class SubmitMultipleReadings extends Component
 
     public function render()
     {
-        return view('livewire.resident.submit-multiple-readings');
+        $title = 'Въвеждане на множество показания';
+        View::share("title", $title);
+        return view('livewire.resident.submit-multiple-readings', [
+            'title' => $title
+        ]);
     }
 }

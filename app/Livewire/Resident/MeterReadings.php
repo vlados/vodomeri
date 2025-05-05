@@ -5,6 +5,7 @@ namespace App\Livewire\Resident;
 use App\Models\Reading;
 use App\Models\WaterMeter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -83,6 +84,8 @@ class MeterReadings extends Component
 
     public function render()
     {
+        $title = 'Показания на водомери';
+        View::share("title", $title);
         $user = Auth::user();
 
         // Get all apartments associated with this user
@@ -137,6 +140,7 @@ class MeterReadings extends Component
         $readings = $query->paginate(10);
 
         return view('livewire.resident.meter-readings', [
+            'title' => $title,
             'readings' => $readings,
             'availableDates' => $this->availableDates,
         ]);

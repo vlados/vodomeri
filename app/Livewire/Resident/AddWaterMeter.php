@@ -4,6 +4,7 @@ namespace App\Livewire\Resident;
 
 use App\Models\WaterMeter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 
 class AddWaterMeter extends Component
@@ -72,6 +73,10 @@ class AddWaterMeter extends Component
 
     public function render()
     {
-        return view('livewire.resident.add-water-meter');
+        $title = 'Добавяне на водомер';
+        View::share("title", $title);
+        return view('livewire.resident.add-water-meter', [
+            'title' => $title
+        ]);
     }
 }

@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -394,6 +395,10 @@ class BulkReadingsUpload extends Component
 
     public function render()
     {
-        return view('livewire.resident.bulk-readings-upload');
+        $title = 'Групово качване на показания';
+        View::share("title", $title);
+        return view('livewire.resident.bulk-readings-upload', [
+            'title' => $title
+        ]);
     }
 }

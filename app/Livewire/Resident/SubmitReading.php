@@ -32,7 +32,8 @@ class SubmitReading extends Component
     public function mount($meterId = null)
     {
         $this->meterId = $meterId;
-        $this->readingDate = now()->format('Y-m-d');
+        // Set the reading date to the last day of the previous month by default
+        $this->readingDate = now()->subMonth()->endOfMonth()->format('Y-m-d');
 
         if ($this->meterId) {
             $this->loadMeterData();

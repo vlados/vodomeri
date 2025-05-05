@@ -29,10 +29,22 @@ class OpenAIService
     public function analyzeMeterReading(string $imagePath, string $serialNumber, float $reportedReading): array
     {
         try {
+            // Log the start of analysis
+            Log::info('Starting meter reading analysis', [
+                'image_path' => $imagePath,
+                'serial_number' => $serialNumber,
+                'reported_reading' => $reportedReading
+            ]);
+            
             // Get full storage path
             $fullPath = Storage::disk('public')->path($imagePath);
 
             if (! file_exists($fullPath)) {
+                Log::warning('Meter reading analysis failed: image file not found', [
+                    'image_path' => $imagePath, 
+                    'full_path' => $fullPath
+                ]);
+                
                 return [
                     'success' => false,
                     'message' => 'Снимката не може да бъде намерена',
@@ -51,16 +63,17 @@ class OpenAIService
                     ."1. The serial number of the water meter\n"
                     ."2. The current reading value on the meter (cubic meters)\n\n"
                     ."IMPORTANT INSTRUCTIONS FOR READING THE VALUES:\n"
-                    ."- Only extract the first 5 digits before the comma/decimal point\n"
-                    ."- Ignore any red-colored numbers on the dial (these are decimal fractions)\n"
-                    ."- Focus only on the black numbers in the counter display\n"
-                    ."- The reading should be an integer number (without decimals)\n\n"
+                    ."- Extract 5 digits before the decimal point and 3 digits after\n"
+                    ."- Format should be 00000.000 (with decimal point)\n"
+                    ."- Red-colored numbers on the dial are typically decimal fractions\n"
+                    ."- Black numbers are typically whole numbers\n"
+                    ."- Precision is important - include all visible decimal digits\n\n"
                     ."Expected serial number: {$serialNumber}\n"
                     ."Reported reading value: {$reportedReading} m³\n\n"
                     ."Provide your analysis in this JSON format:\n"
                     ."{\n"
                     ."  \"extracted_serial\": \"the serial number you can see in the image\",\n"
-                    ."  \"extracted_reading\": \"only the first 5 whole digits before the decimal\",\n"
+                    ."  \"extracted_reading\": \"the complete reading with decimal point (format: 00000.000)\",\n"
                     ."  \"serial_matches\": true/false,\n"
                     ."  \"reading_matches\": true/false,\n"
                     ."  \"confidence\": \"high/medium/low\",\n"
@@ -108,12 +121,30 @@ class OpenAIService
                 throw new Exception('Failed to parse JSON from OpenAI response');
             }
 
-            // Convert extracted reading to integer
-            $extractedReading = preg_replace('/[^0-9]/', '', $analysisResult['extracted_reading']);
-            $reportedReadingInt = (int)$reportedReading;
+            // Process the extracted reading properly with decimals
+            $extractedReading = $analysisResult['extracted_reading'];
             
-            // Custom comparison for integer readings
-            $readingMatches = ($extractedReading == $reportedReadingInt);
+            // Clean the extracted reading, ensuring it has a proper format
+            // First, remove any non-digit, non-decimal point characters
+            $cleanExtractedReading = preg_replace('/[^0-9.]/', '', $extractedReading);
+            
+            // Ensure we have a single decimal point
+            if (substr_count($cleanExtractedReading, '.') > 1) {
+                // Multiple decimal points - keep only the first one
+                $parts = explode('.', $cleanExtractedReading);
+                $cleanExtractedReading = $parts[0] . '.' . $parts[1];
+            }
+            
+            // Format the extracted and reported readings for comparison
+            // Use 3 decimal precision for comparison
+            $extractedValue = number_format((float)$cleanExtractedReading, 3, '.', '');
+            $reportedValue = number_format((float)$reportedReading, 3, '.', '');
+            
+            // Compare with a small tolerance for rounding errors (0.001)
+            $readingMatches = (abs((float)$extractedValue - (float)$reportedValue) < 0.001);
+            
+            // Store the cleaned value for later use
+            $extractedReading = $cleanExtractedReading;
             
             // Format response
             $successMessage = '';
@@ -128,6 +159,20 @@ class OpenAIService
             } elseif (! $readingMatches) {
                 $failureMessage = 'Показанието не съответства на стойността от снимката. Отчетено: ' . $extractedReading;
             }
+            
+            // Log analysis results
+            Log::info('Meter reading analysis results', [
+                'image_path' => $imagePath,
+                'serial_number_matches' => $analysisResult['serial_matches'],
+                'reading_matches' => $readingMatches,
+                'expected_serial' => $serialNumber,
+                'extracted_serial' => $analysisResult['extracted_serial'] ?? null,
+                'expected_reading' => $reportedReading,
+                'extracted_reading' => $extractedReading,
+                'confidence' => $analysisResult['confidence'] ?? 'unknown',
+                'issues' => $analysisResult['issues'] ?? null,
+                'success' => ($analysisResult['serial_matches'] && $readingMatches)
+            ]);
 
             return [
                 'success' => ($analysisResult['serial_matches'] && $readingMatches),
@@ -188,17 +233,18 @@ class OpenAIService
                         . "1. The serial number of the water meter\n"
                         . "2. The current reading value on the meter (cubic meters)\n\n"
                         . "IMPORTANT INSTRUCTIONS FOR READING THE VALUES:\n"
-                        . "- Only extract the first 5 digits before the comma/decimal point\n"
-                        . "- Ignore any red-colored numbers on the dial (these are decimal fractions)\n"
-                        . "- Focus only on the black numbers in the counter display\n"
-                        . "- The reading should be an integer number (without decimals)\n\n"
+                        . "- Extract 5 digits before the decimal point and 3 digits after\n"
+                        . "- Format should be 00000.000 (with decimal point)\n"
+                        . "- Red-colored numbers on the dial are typically decimal fractions\n"
+                        . "- Black numbers are typically whole numbers\n"
+                        . "- Precision is important - include all visible decimal digits\n\n"
                         . "Known water meter serial numbers that might be in this image: " . implode(", ", $allSerialNumbers) . "\n\n"
                         . "Provide your analysis in this JSON format:\n"
                         . "{\n"
                         . "  \"meters\": [\n"
                         . "    {\n"
                         . "      \"extracted_serial\": \"the serial number you can see\",\n"
-                        . "      \"extracted_reading\": \"only the first 5 whole digits before the decimal\",\n"
+                        . "      \"extracted_reading\": \"the complete reading with decimal point (format: 00000.000)\",\n"
                         . "      \"confidence\": \"high/medium/low\"\n"
                         . "    },\n"
                         . "    {...more meters if found...}\n"
@@ -238,13 +284,33 @@ class OpenAIService
                 $jsonEndPos = strrpos($responseContent, '}');
                 
                 if ($jsonStartPos === false || $jsonEndPos === false) {
+                    // Log invalid response format
+                    Log::warning('OpenAI extraction failed: Invalid response format (no JSON object found)', [
+                        'image_path' => $imagePath,
+                        'response_content' => substr($responseContent, 0, 500) . (strlen($responseContent) > 500 ? '...' : '')
+                    ]);
                     continue;
                 }
                 
                 $jsonString = substr($responseContent, $jsonStartPos, $jsonEndPos - $jsonStartPos + 1);
                 $analysisResult = json_decode($jsonString, true);
                 
-                if (json_last_error() !== JSON_ERROR_NONE || !isset($analysisResult['meters'])) {
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    // Log JSON parsing error
+                    Log::warning('OpenAI extraction failed: JSON parsing error', [
+                        'image_path' => $imagePath,
+                        'json_error' => json_last_error_msg(),
+                        'json_string' => substr($jsonString, 0, 500) . (strlen($jsonString) > 500 ? '...' : '')
+                    ]);
+                    continue;
+                }
+                
+                if (!isset($analysisResult['meters'])) {
+                    // Log missing 'meters' field
+                    Log::warning('OpenAI extraction failed: Missing meters field in response', [
+                        'image_path' => $imagePath,
+                        'analysis_result' => $analysisResult
+                    ]);
                     continue;
                 }
                 
@@ -265,6 +331,17 @@ class OpenAIService
                         
                         // If we have a match, add to results
                         if ($matchConfidence >= 0.8) {
+                            // Log successful recognition
+                            Log::info('Meter recognized', [
+                                'meter_id' => $knownMeter['id'],
+                                'serial_number' => $knownMeter['serial_number'],
+                                'extracted_serial' => $serialNumber,
+                                'extracted_reading' => $reading,
+                                'confidence' => $confidence,
+                                'match_confidence' => $matchConfidence,
+                                'image_path' => $imagePath
+                            ]);
+                            
                             // Create entry for this meter if it doesn't exist
                             if (!isset($results[$knownMeter['id']])) {
                                 $results[$knownMeter['id']] = [
@@ -284,13 +361,36 @@ class OpenAIService
                                 $results[$knownMeter['id']]['match_confidence'] = $matchConfidence;
                             }
                         }
+                        // Log near-matches for debugging
+                        else if ($matchConfidence > 0.5) {
+                            Log::info('Meter recognition near-match', [
+                                'meter_id' => $knownMeter['id'],
+                                'serial_number' => $knownMeter['serial_number'],
+                                'extracted_serial' => $serialNumber,
+                                'match_confidence' => $matchConfidence,
+                                'threshold' => 0.8,
+                                'image_path' => $imagePath
+                            ]);
+                        }
                     }
                 }
             }
             
+            // Log the final extraction result
+            $success = !empty($results);
+            $resultCount = count($results);
+            
+            Log::info('OpenAI meter extraction completed', [
+                'success' => $success,
+                'meters_found' => $resultCount,
+                'total_meters' => count($waterMeters),
+                'image_count' => count($imagePaths),
+                'timestamp' => now()->toDateTimeString()
+            ]);
+            
             return [
-                'success' => !empty($results),
-                'message' => empty($results) ? 'Не успяхме да разпознаем водомери на снимките' : 'Успешно разпознахме ' . count($results) . ' водомера',
+                'success' => $success,
+                'message' => empty($results) ? 'Не успяхме да разпознаем водомери на снимките' : 'Успешно разпознахме ' . $resultCount . ' водомера',
                 'results' => array_values($results),
             ];
             

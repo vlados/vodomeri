@@ -34,10 +34,10 @@ Route::get('readings/submit-multiple', App\Livewire\Resident\SubmitMultipleReadi
     ->middleware(['auth', 'verified'])
     ->name('readings.multiple');
 
-// Bulk readings upload with AI detection (route commented out as requested)
-// Route::get('readings/bulk-upload', App\Livewire\Resident\BulkReadingsUpload::class)
-//     ->middleware(['auth', 'verified'])
-//     ->name('readings.bulk-upload');
+// Bulk readings upload with AI detection
+Route::get('readings/bulk-upload', App\Livewire\Resident\BulkReadingsUpload::class)
+    ->middleware(['auth', 'verified'])
+    ->name('readings.bulk-upload');
 
 // Add new water meter
 Route::get('meters/add', App\Livewire\Resident\AddWaterMeter::class)

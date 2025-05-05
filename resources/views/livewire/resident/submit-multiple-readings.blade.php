@@ -1,5 +1,13 @@
 <div>
-    <h1 class="text-2xl font-semibold mb-6">Подаване на самоотчет</h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h1 class="text-2xl font-semibold">Подаване на самоотчет</h1>
+        <div class="mt-2 sm:mt-0 text-gray-500 font-medium flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Показания за: {{ \Carbon\Carbon::parse($readingDate)->format('d.m.Y') }}</span>
+        </div>
+    </div>
 
     @if ($apartments->isEmpty())
     <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
@@ -23,6 +31,22 @@
         </a>
     </div>
     @else
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>Ново!</strong> Вече можете да подавате показания на всички водомери наведнъж чрез снимки.
+                    <a href="{{ route('readings.bulk-upload') }}" class="font-medium underline">Опитайте новия начин за отчитане със снимки</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+    
     <form wire:submit="verifyReadings" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <flux:select

@@ -15,15 +15,31 @@
             <flux:navbar class="-mb-px max-lg:hidden">
                 <flux:navbar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Начало') }}</flux:navbar.item>
                 <flux:navbar.item icon="list-bullet" :href="route('meters.list')" :current="request()->routeIs('meters.list')" wire:navigate>{{ __('Водомери') }}</flux:navbar.item>
-                <flux:navbar.item icon="document-text" :href="route('readings.multiple')" :current="request()->routeIs('readings.multiple')" wire:navigate>{{ __('Самоотчет') }}</flux:navbar.item>
+
+                <flux:dropdown>
+                    <flux:navbar.item icon-trailing="chevron-down" :current="request()->routeIs('readings.multiple') || request()->routeIs('readings.bulk-upload')" wire:navigate>
+                        {{ __('Самоотчет') }}
+                    </flux:navbar.item>
+
+                    <flux:navmenu>
+                        <flux:navmenu.item icon="camera" :href="route('readings.bulk-upload')" wire:navigate>
+                            {{ __('Отчет със снимки') }}
+                            <flux:badge color="blue" size="sm" class="ml-2" variant="solid">AI</flux:badge>
+                        </flux:navmenu.item>
+                        <flux:navmenu.item icon="document-text" :href="route('readings.multiple')" wire:navigate>
+                            {{ __('Стандартен отчет') }}
+                        </flux:navmenu.item>
+                    </flux:navmenu>
+                </flux:dropdown>
+
                 <flux:navbar.item icon="clipboard-document-list" :href="route('readings.history')" :current="request()->routeIs('readings.history')" wire:navigate>{{ __('История') }}</flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
-            
+
             <!-- Report Bug Button -->
                 @livewire('report-bug')
-                
+
             <!-- Desktop User Menu -->
             <flux:dropdown position="top" align="end">
                 <flux:profile
@@ -85,9 +101,22 @@
                     <flux:navlist.item icon="list-bullet" :href="route('meters.list')" :current="request()->routeIs('meters.list')" wire:navigate>
                     {{ __('Водомери') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="document-text" :href="route('readings.multiple')" :current="request()->routeIs('readings.multiple')" wire:navigate>
-                    {{ __('Самоотчет') }}
-                    </flux:navlist.item>
+
+                    <!-- Readings Submenu -->
+                    <flux:navlist.group
+                        expandable
+                        :heading="__('Самоотчет')"
+                        :icon="request()->routeIs('readings.multiple') || request()->routeIs('readings.bulk-upload') ? 'document-text' : 'document-text'"
+                        :current="request()->routeIs('readings.multiple') || request()->routeIs('readings.bulk-upload')"
+                    >
+                        <flux:navlist.item icon="document-text" :href="route('readings.multiple')" :current="request()->routeIs('readings.multiple')" wire:navigate>
+                            {{ __('Стандартен отчет') }}
+                        </flux:navlist.item>
+                        <flux:navlist.item icon="camera" :href="route('readings.bulk-upload')" :current="request()->routeIs('readings.bulk-upload')" wire:navigate>
+                            {{ __('Отчет със снимки') }}
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+
                     <flux:navlist.item icon="clipboard-document-list" :href="route('readings.history')" :current="request()->routeIs('readings.history')" wire:navigate>
                     {{ __('История') }}
                     </flux:navlist.item>
@@ -95,12 +124,12 @@
             </flux:navlist>
 
             <flux:spacer />
-            
+
             <!-- Mobile Bug Report Button -->
             <div class="px-3 py-2">
                 @livewire('report-bug')
             </div>
-            
+
             <!-- Mobile Admin Link (if user is admin) -->
             @if(auth()->user()->hasRole('admin'))
             <div class="px-3 py-2">

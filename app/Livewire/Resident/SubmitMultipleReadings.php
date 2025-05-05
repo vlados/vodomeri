@@ -30,7 +30,8 @@ class SubmitMultipleReadings extends Component
 
     public function mount()
     {
-        $this->readingDate = now()->format('Y-m-d');
+        // Set the reading date to the last day of the previous month by default
+        $this->readingDate = now()->subMonth()->endOfMonth()->format('Y-m-d');
         $user = Auth::user();
 
         // Get apartments associated with this user

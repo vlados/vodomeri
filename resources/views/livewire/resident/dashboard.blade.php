@@ -40,11 +40,17 @@
                     Нов водомер
                 </flux:button>
             </div>
-            <div class="col-span-1 w-full ml-auto flex justify-end">
-                <flux:button href="{{ route('readings.multiple') }}" size="sm" variant="primary"
+            <div class="col-span-1 w-full ml-auto flex justify-end space-x-2">
+                <flux:button href="{{ route('readings.multiple') }}" size="sm" variant="outline"
                              class="w-full justify-center sm:w-auto sm:justify-start">
                     <x-fas-pen-to-square class="w-4 h-4 mr-2" />
-                    Самоотчет
+                    Стандартен отчет
+                </flux:button>
+                
+                <flux:button href="{{ route('readings.bulk-upload') }}" size="sm" variant="primary"
+                             class="w-full justify-center sm:w-auto sm:justify-start">
+                    <x-fas-camera class="w-4 h-4 mr-2" />
+                    Отчет със снимки
                 </flux:button>
             </div>
         </div>

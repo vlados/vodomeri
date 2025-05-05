@@ -22,7 +22,15 @@
                         </a>
                     </div>
                 @else
-                    <h1 class="text-2xl font-semibold mb-6">Въвеждане на ново показание</h1>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                        <h1 class="text-2xl font-semibold">Въвеждане на ново показание</h1>
+                        <div class="mt-2 sm:mt-0 text-gray-500 font-medium flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Показания за: {{ \Carbon\Carbon::parse($readingDate)->format('d.m.Y') }}</span>
+                        </div>
+                    </div>
                     
                     <div class="bg-gray-50 p-4 rounded-lg mb-6">
                         <h2 class="text-lg font-medium mb-2">

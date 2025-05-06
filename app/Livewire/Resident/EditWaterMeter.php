@@ -73,9 +73,10 @@ class EditWaterMeter extends Component
     public function render()
     {
         $title = 'Редактиране на водомер';
-        View::share("title", $title);
+        View::share('title', $title);
+
         return view('livewire.resident.edit-water-meter', [
-            'title' => $title
+            'title' => $title,
         ]);
     }
 }

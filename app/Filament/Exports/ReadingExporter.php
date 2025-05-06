@@ -49,22 +49,22 @@ class ReadingExporter extends Exporter
     public function getFileName(Export $export): string
     {
         $options = $export->options ?? [];
-        
+
         $year = $options['year'] ?? now()->format('Y');
         $month = $options['month'] ?? now()->format('m');
-        
+
         // Ensure month is two digits
         $month = str_pad($month, 2, '0', STR_PAD_LEFT);
-        
+
         return "PBonchev-{$year}-{$month}";
     }
-    
+
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Your reading export has completed and ' . number_format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';
+        $body = 'Your reading export has completed and '.number_format($export->successful_rows).' '.str('row')->plural($export->successful_rows).' exported.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
-            $body .= ' ' . number_format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to export.';
+            $body .= ' '.number_format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' failed to export.';
         }
 
         return $body;

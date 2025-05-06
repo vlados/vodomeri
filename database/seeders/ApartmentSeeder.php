@@ -15,14 +15,14 @@ class ApartmentSeeder extends Seeder
     {
         // Create regular apartments (АП1-АП17)
         $this->createRegularApartments();
-        
+
         // Create ateliers (AT1-AT3)
         $this->createAteliers();
-        
+
         // Create stores/shops (МАГ1-МАГ2)
         $this->createStores();
     }
-    
+
     /**
      * Create regular apartments
      */
@@ -35,7 +35,7 @@ class ApartmentSeeder extends Seeder
             ->each(function ($apartment) {
                 $this->processApartmentEmails($apartment);
             });
-            
+
         // Create apartments with multiple owners
         Apartment::factory()
             ->count(9)
@@ -45,7 +45,7 @@ class ApartmentSeeder extends Seeder
                 $this->processApartmentEmails($apartment);
             });
     }
-    
+
     /**
      * Create atelier apartments
      */
@@ -56,7 +56,7 @@ class ApartmentSeeder extends Seeder
             ->atelier()
             ->create();
     }
-    
+
     /**
      * Create store/shop apartments
      */
@@ -66,7 +66,7 @@ class ApartmentSeeder extends Seeder
         Apartment::factory()
             ->storeApartment()
             ->create();
-            
+
         // Create a store with multiple owners
         Apartment::factory()
             ->storeApartment()
@@ -76,7 +76,7 @@ class ApartmentSeeder extends Seeder
                 $this->processApartmentEmails($apartment);
             });
     }
-    
+
     /**
      * Process apartment emails and create invitations
      */
@@ -85,10 +85,10 @@ class ApartmentSeeder extends Seeder
         // Process and split multiple emails
         if (! empty($apartment->email)) {
             $emails = array_map('trim', explode(',', $apartment->email));
-            
+
             // Update apartment with first email
             $apartment->update(['email' => $emails[0]]);
-            
+
             // Create invitations for all emails
             foreach ($emails as $email) {
                 $this->createInvitationForEmail($apartment, $email);

@@ -12,17 +12,17 @@ use Illuminate\Database\Eloquent\Model;
 class ReportResource extends Resource
 {
     protected static ?string $model = \App\Models\Report::class;
-    
+
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
-    
+
     protected static ?string $navigationLabel = 'Справки';
-    
+
     protected static ?string $pluralModelLabel = 'Справки';
-    
+
     protected static ?string $modelLabel = 'Справка';
-    
+
     protected static ?int $navigationSort = 80;
-    
+
     public static function form(Form $form): Form
     {
         return $form
@@ -36,7 +36,7 @@ class ReportResource extends Resource
                                 'cold_water' => 'Студена вода',
                             ])
                             ->required(),
-                        
+
                         Forms\Components\Select::make('month')
                             ->label('Месец')
                             ->options([
@@ -55,7 +55,7 @@ class ReportResource extends Resource
                             ])
                             ->default(now()->month)
                             ->required(),
-                        
+
                         Forms\Components\Select::make('year')
                             ->label('Година')
                             ->options(function () {
@@ -65,6 +65,7 @@ class ReportResource extends Resource
                                     $year = $currentYear - $i;
                                     $years[$year] = $year;
                                 }
+
                                 return $years;
                             })
                             ->default(now()->year)
@@ -73,28 +74,28 @@ class ReportResource extends Resource
                     ->columns(3),
             ]);
     }
-    
+
     // No database table for this resource, so no table method is needed
-    
+
     public static function getRelations(): array
     {
         return [
             //
         ];
     }
-    
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListReports::route('/'),
         ];
     }
-    
+
     public static function getNavigationBadge(): ?string
     {
         return 'New';
     }
-    
+
     public static function canDelete(Model $record): bool
     {
         return false;

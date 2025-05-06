@@ -27,6 +27,7 @@ class SubmitMultipleReadings extends Component
     public $verificationResults = [];
 
     public $aiVerificationEnabled = true;
+
     public $openAIConfigured = false;
 
     public function mount()
@@ -42,12 +43,12 @@ class SubmitMultipleReadings extends Component
             $this->selectedApartmentId = $this->apartments->first()->id;
             $this->loadMeters();
         }
-        
+
         // Check if OpenAI is configured
         $this->openAIConfigured = OpenAIService::isConfigured();
-        
+
         // If OpenAI is not configured, disable AI verification
-        if (!$this->openAIConfigured) {
+        if (! $this->openAIConfigured) {
             $this->aiVerificationEnabled = false;
         }
     }
@@ -199,7 +200,7 @@ class SubmitMultipleReadings extends Component
 
             // Get the apartment ID for folder organization
             $apartmentId = $this->selectedApartmentId;
-            
+
             // Store the photo temporarily - we'll append "-temp" to the path
             // to indicate this is a temporary storage location
             $photoPath = Reading::storeUploadedPhoto(
@@ -207,9 +208,9 @@ class SubmitMultipleReadings extends Component
                 $meterData['id'],
                 $this->readingDate
             );
-            
+
             // Replace the regular path with a temp path for verification
-            $photoPath = str_replace("reading-photos/", "reading-photos-temp/", $photoPath);
+            $photoPath = str_replace('reading-photos/', 'reading-photos-temp/', $photoPath);
 
             // Analyze the meter reading with OpenAI
             $analysis = $openAiService->analyzeMeterReading(
@@ -257,7 +258,7 @@ class SubmitMultipleReadings extends Component
                 // Get the apartment for folder organization
                 $apartmentId = $this->selectedApartmentId;
                 $apartmentFolder = "apartment-{$apartmentId}";
-                
+
                 // If we already verified and have a temporary photo path, move it to permanent storage
                 if (isset($this->verificationResults[$index]['photo_path'])) {
                     $tempPath = $this->verificationResults[$index]['photo_path'];
@@ -344,9 +345,10 @@ class SubmitMultipleReadings extends Component
     public function render()
     {
         $title = 'Въвеждане на множество показания';
-        View::share("title", $title);
+        View::share('title', $title);
+
         return view('livewire.resident.submit-multiple-readings', [
-            'title' => $title
+            'title' => $title,
         ]);
     }
 }

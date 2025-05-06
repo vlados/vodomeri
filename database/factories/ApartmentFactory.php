@@ -18,9 +18,9 @@ class ApartmentFactory extends Factory
     public function definition(): array
     {
         static $number = 1;
-        
+
         return [
-            'number' => 'АП' . $number++,
+            'number' => 'АП'.$number++,
             'floor' => $this->faker->numberBetween(1, 7),
             'owner_name' => $this->faker->name,
             'email' => $this->faker->optional(0.7)->email,
@@ -35,11 +35,11 @@ class ApartmentFactory extends Factory
     public function storeApartment(): static
     {
         static $storeNumber = 1;
-        
+
         return $this->state(fn (array $attributes) => [
-            'number' => 'МАГ' . $storeNumber . ' (' . $this->faker->company . ')',
+            'number' => 'МАГ'.$storeNumber.' ('.$this->faker->company.')',
             'floor' => 0,
-            'notes' => 'Магазин ' . $storeNumber++,
+            'notes' => 'Магазин '.$storeNumber++,
         ]);
     }
 
@@ -49,11 +49,11 @@ class ApartmentFactory extends Factory
     public function atelier(): static
     {
         static $atelierNumber = 1;
-        
+
         return $this->state(fn (array $attributes) => [
-            'number' => 'AT' . $atelierNumber,
+            'number' => 'AT'.$atelierNumber,
             'floor' => 0,
-            'notes' => 'Ателие ' . $atelierNumber++,
+            'notes' => 'Ателие '.$atelierNumber++,
         ]);
     }
 
@@ -66,21 +66,21 @@ class ApartmentFactory extends Factory
             $names = collect(range(1, $count))
                 ->map(fn () => $this->faker->name)
                 ->implode(', ');
-            
+
             $emails = null;
             if (rand(0, 100) > 30) {
                 $emails = collect(range(1, $count))
                     ->map(fn () => $this->faker->email)
                     ->implode(', ');
             }
-            
+
             $phones = null;
             if (rand(0, 100) > 40) {
                 $phones = collect(range(1, $count))
                     ->map(fn () => $this->faker->phoneNumber)
                     ->implode(', ');
             }
-            
+
             return [
                 'owner_name' => $names,
                 'email' => $emails,

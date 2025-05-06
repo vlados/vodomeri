@@ -32,8 +32,9 @@ class ColdWaterReportExporter extends Exporter
                         ->first();
 
                     // If no previous reading, use initial reading
-                    if (!$previousReading) {
+                    if (! $previousReading) {
                         $waterMeter = WaterMeter::find($record->water_meter_id);
+
                         return number_format($waterMeter->initial_reading, 3);
                     }
 
@@ -67,22 +68,22 @@ class ColdWaterReportExporter extends Exporter
     public function getFileName(Export $export): string
     {
         $options = $export->options ?? [];
-        
+
         $year = $options['year'] ?? now()->format('Y');
         $month = $options['month'] ?? now()->format('m');
-        
+
         // Ensure month is two digits
         $month = str_pad($month, 2, '0', STR_PAD_LEFT);
-        
+
         return "ColdWaterReport-{$year}-{$month}";
     }
-    
+
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Your cold water report has completed and ' . number_format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';
+        $body = 'Your cold water report has completed and '.number_format($export->successful_rows).' '.str('row')->plural($export->successful_rows).' exported.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
-            $body .= ' ' . number_format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to export.';
+            $body .= ' '.number_format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' failed to export.';
         }
 
         return $body;

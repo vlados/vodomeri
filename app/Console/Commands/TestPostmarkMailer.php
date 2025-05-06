@@ -27,22 +27,23 @@ class TestPostmarkMailer extends Command
     public function handle()
     {
         $email = $this->argument('email') ?: config('mail.from.address');
-        
+
         $this->info("Sending test email to: {$email}");
-        
+
         try {
             Mail::raw('This is a test email from the PBonchev application using Symfony Postmark mailer.', function ($message) use ($email) {
                 $message->to($email)
                     ->subject('Test Email from PBonchev App');
             });
-            
+
             $this->info('Test email sent successfully!');
         } catch (\Exception $e) {
-            $this->error('Failed to send test email: ' . $e->getMessage());
+            $this->error('Failed to send test email: '.$e->getMessage());
             $this->error($e->getTraceAsString());
+
             return Command::FAILURE;
         }
-        
+
         return Command::SUCCESS;
     }
 }

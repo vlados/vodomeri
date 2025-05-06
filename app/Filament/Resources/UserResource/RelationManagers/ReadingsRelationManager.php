@@ -55,11 +55,11 @@ class ReadingsRelationManager extends RelationManager
                     ->saveUploadedFileUsing(function ($file, callable $get) {
                         $waterId = $get('water_meter_id');
                         $readingDate = $get('reading_date') ?? now();
-                        
-                        if (!$waterId) {
+
+                        if (! $waterId) {
                             return $file->store('reading-photos-temp', 'public');
                         }
-                        
+
                         // Use the centralized method for storing photos
                         return \App\Models\Reading::storeUploadedPhoto($file, $waterId, $readingDate);
                     })

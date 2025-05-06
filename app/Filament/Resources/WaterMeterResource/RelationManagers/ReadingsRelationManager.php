@@ -2,13 +2,11 @@
 
 namespace App\Filament\Resources\WaterMeterResource\RelationManagers;
 
-use App\Models\Reading;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Collection;
 
 class ReadingsRelationManager extends RelationManager
 {
@@ -39,7 +37,7 @@ class ReadingsRelationManager extends RelationManager
                         // Get the water meter ID from the owner record
                         $waterMeter = $this->getOwnerRecord();
                         $readingDate = $record->reading_date ?? now();
-                        
+
                         // Use the centralized method for storing photos
                         return \App\Models\Reading::storeUploadedPhoto($file, $waterMeter->id, $readingDate);
                     })

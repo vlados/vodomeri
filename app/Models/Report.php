@@ -13,10 +13,10 @@ class Report extends Model
         'month',
         'year',
     ];
-    
+
     // Prevents Laravel from trying to interact with a database table
     protected $table = null;
-    
+
     // Disable timestamps
     public $timestamps = false;
 }

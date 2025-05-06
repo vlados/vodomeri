@@ -83,8 +83,8 @@ class SubmitReading extends Component
         if ($this->photo) {
             // Use the centralized method to store the photo
             $photoPath = Reading::storeUploadedPhoto(
-                $this->photo, 
-                $this->meterId, 
+                $this->photo,
+                $this->meterId,
                 $this->readingDate
             );
         }
@@ -107,9 +107,10 @@ class SubmitReading extends Component
     public function render()
     {
         $title = 'Въвеждане на показание';
-        View::share("title", $title);
+        View::share('title', $title);
+
         return view('livewire.resident.submit-reading', [
-            'title' => $title
+            'title' => $title,
         ]);
     }
 }

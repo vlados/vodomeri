@@ -66,7 +66,7 @@ Route::middleware(['auth'])->group(function () {
 Route::impersonate();
 
 // Reports are now handled by Filament admin panel
-Route::get('admin/resources/reports/generate', function() {
+Route::get('admin/resources/reports/generate', function () {
     return app()->make(App\Filament\Resources\ReportResource\Pages\ListReports::class)->generateReport();
 })
     ->middleware(['auth', 'verified'])

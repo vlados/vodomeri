@@ -74,9 +74,10 @@ class AddWaterMeter extends Component
     public function render()
     {
         $title = 'Добавяне на водомер';
-        View::share("title", $title);
+        View::share('title', $title);
+
         return view('livewire.resident.add-water-meter', [
-            'title' => $title
+            'title' => $title,
         ]);
     }
 }

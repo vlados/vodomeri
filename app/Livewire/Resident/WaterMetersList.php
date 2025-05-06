@@ -15,9 +15,13 @@ class WaterMetersList extends Component
     public $search = '';
 
     public $typeFilter = '';
+
     public $meterToDelete = null;
+
     public $showDeleteModal = false;
+
     public $deleteErrorMessage = '';
+
     public $readingsCount = 0;
 
     protected $queryString = [
@@ -43,22 +47,22 @@ class WaterMetersList extends Component
         $this->meterToDelete = $meterId;
         $this->showDeleteModal = true;
         $this->deleteErrorMessage = '';
-        
+
         // Check if meter has readings
         $user = Auth::user();
         $userApartmentIds = $user->apartments->pluck('id')->toArray();
-        
+
         $meter = WaterMeter::where('id', $meterId)
             ->whereIn('apartment_id', $userApartmentIds)
             ->first();
-            
+
         if ($meter) {
             $this->readingsCount = $meter->readings()->count();
         } else {
             $this->readingsCount = 0;
         }
     }
-    
+
     /**
      * Close delete confirmation modal
      */
@@ -69,7 +73,7 @@ class WaterMetersList extends Component
         $this->deleteErrorMessage = '';
         $this->readingsCount = 0;
     }
-    
+
     /**
      * Delete the selected water meter
      */
@@ -79,59 +83,61 @@ class WaterMetersList extends Component
             // Debug log
             \Log::info('Deleting water meter', [
                 'meter_id' => $this->meterToDelete,
-                'readings_count' => $this->readingsCount
+                'readings_count' => $this->readingsCount,
             ]);
-            
+
             // Make sure we have a meter ID
-            if (!$this->meterToDelete) {
+            if (! $this->meterToDelete) {
                 $this->deleteErrorMessage = 'Няма избран водомер за изтриване.';
+
                 return;
             }
-            
+
             $user = Auth::user();
             $userApartmentIds = $user->apartments->pluck('id')->toArray();
-            
+
             // Find the water meter
             $meter = WaterMeter::where('id', $this->meterToDelete)
                 ->whereIn('apartment_id', $userApartmentIds)
                 ->first();
-                
-            if (!$meter) {
+
+            if (! $meter) {
                 $this->deleteErrorMessage = 'Нямате достъп до този водомер или водомерът не съществува.';
+
                 return;
             }
-            
+
             // Check if there are readings and delete them first
             $readingsCount = $meter->readings()->count();
-            
+
             // First delete all readings if they exist
             if ($readingsCount > 0) {
                 $meter->readings()->delete();
             }
-            
+
             // Delete the water meter
             $meter->delete();
-            
+
             // Close the modal
             $this->meterToDelete = null;
             $this->showDeleteModal = false;
-            
+
             // Show success message
             if ($readingsCount > 0) {
                 session()->flash('success', "Водомерът и неговите {$readingsCount} показания бяха успешно изтрити.");
             } else {
                 session()->flash('success', 'Водомерът беше успешно изтрит.');
             }
-            
+
         } catch (\Exception $e) {
-            $this->deleteErrorMessage = 'Възникна грешка при изтриването на водомера: ' . $e->getMessage();
+            $this->deleteErrorMessage = 'Възникна грешка при изтриването на водомера: '.$e->getMessage();
         }
     }
 
     public function render()
     {
         $title = 'Списък с водомери';
-        View::share("title", $title);
+        View::share('title', $title);
         $user = Auth::user();
         $userApartmentIds = $user->apartments->pluck('id')->toArray();
 

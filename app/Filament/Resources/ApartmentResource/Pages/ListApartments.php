@@ -7,8 +7,8 @@ use App\Models\Apartment;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Tables\Table;
 use Filament\Tables;
+use Filament\Tables\Table;
 
 class ListApartments extends ListRecords
 {
@@ -46,14 +46,14 @@ class ListApartments extends ListRecords
                     $count = (int) $data['count'];
                     $prefix = $data['prefix'];
                     $floor = (int) $data['start_floor'];
-                    
+
                     for ($i = 1; $i <= $count; $i++) {
                         Apartment::create([
-                            'number' => $prefix . $i,
+                            'number' => $prefix.$i,
                             'floor' => $floor,
                             'notes' => 'Bulk created apartment',
                         ]);
-                        
+
                         // Increment floor every 4 apartments (adjustable as needed)
                         if ($i % 4 === 0) {
                             $floor++;
@@ -85,7 +85,7 @@ class ListApartments extends ListRecords
                 Tables\Columns\TextInputColumn::make('phone')
                     ->searchable()
                     ->toggleable(),
-              ]
+            ]
             : [
                 Tables\Columns\TextColumn::make('number')
                     ->searchable()
@@ -103,7 +103,7 @@ class ListApartments extends ListRecords
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable()
                     ->toggleable(),
-              ];
+            ];
 
         // Common columns for both modes
         $commonColumns = [
@@ -124,9 +124,9 @@ class ListApartments extends ListRecords
                     ->label(fn () => $this->isEditable ? 'Disable Editing' : 'Enable Editing')
                     ->icon(fn () => $this->isEditable ? 'heroicon-o-lock-closed' : 'heroicon-o-pencil')
                     ->action(function () {
-                        $this->isEditable = !$this->isEditable;
+                        $this->isEditable = ! $this->isEditable;
                         $this->resetTable();
-                    })
+                    }),
             ]);
     }
 }

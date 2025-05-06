@@ -169,7 +169,7 @@ class WaterMeterResource extends Resource
                     ->action(function (WaterMeter $record, array $data): void {
                         // Get the photo path
                         $photoPath = $data['photo'];
-                        
+
                         // Use a simple workaround to move the photo to the intended path
                         // Create the reading first with temporary path
                         $reading = $record->readings()->create([
@@ -179,9 +179,9 @@ class WaterMeterResource extends Resource
                             'photo_path' => $photoPath,
                             'status' => 'approved', // Default to approved since we removed the status
                         ]);
-                        
+
                         // Try to convert the temporary file to a permanent one
-                        $tempFilePath = storage_path('app/public/' . $photoPath);
+                        $tempFilePath = storage_path('app/public/'.$photoPath);
                         if (file_exists($tempFilePath)) {
                             try {
                                 // Create an UploadedFile from the temp file
@@ -192,21 +192,21 @@ class WaterMeterResource extends Resource
                                     null,
                                     true
                                 );
-                                
+
                                 // Get a proper path
                                 $newPath = \App\Models\Reading::storeUploadedPhoto(
                                     $photoFile,
                                     $record->id,
                                     $data['reading_date']
                                 );
-                                
+
                                 // Update the reading with the proper path
                                 $reading->update(['photo_path' => $newPath]);
                             } catch (\Exception $e) {
                                 // Silent fail - at least we have the temp photo
                             }
                         }
-                        
+
                         // Show success notification
                         \Filament\Notifications\Notification::make()
                             ->title('Reading added successfully')

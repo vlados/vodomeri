@@ -14,7 +14,9 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     public $selectedPeriod = 'last_6_months';
+
     public $sortBy = 'floor';
+
     public $sortDirection = 'asc';
 
     public $waterTypes = ['hot', 'cold'];
@@ -93,16 +95,16 @@ class Dashboard extends Component
         // Get unique month/year combinations from results
         $uniqueMonths = collect();
         foreach ($results as $result) {
-            $key = $result->year . '-' . $result->month;
-            if (!$uniqueMonths->contains('key', $key)) {
+            $key = $result->year.'-'.$result->month;
+            if (! $uniqueMonths->contains('key', $key)) {
                 $uniqueMonths->push([
                     'key' => $key,
-                    'year' => (int)$result->year,
-                    'month' => (int)$result->month,
+                    'year' => (int) $result->year,
+                    'month' => (int) $result->month,
                     'date' => Carbon::createFromDate($result->year, $result->month, 1)->format('Y-m-d'),
                     'label' => Carbon::createFromDate($result->year, $result->month, 1)->format('M Y'),
                     'hot' => 0,
-                    'cold' => 0
+                    'cold' => 0,
                 ]);
             }
         }
@@ -232,12 +234,12 @@ class Dashboard extends Component
         // Extract unique year-month combinations
         $uniqueMonths = collect();
         foreach ($allReadings as $reading) {
-            $key = $reading->year . '-' . $reading->month;
-            if (!$uniqueMonths->contains('key', $key)) {
+            $key = $reading->year.'-'.$reading->month;
+            if (! $uniqueMonths->contains('key', $key)) {
                 $uniqueMonths->push([
                     'key' => $key,
-                    'year' => (int)$reading->year,
-                    'month' => (int)$reading->month,
+                    'year' => (int) $reading->year,
+                    'month' => (int) $reading->month,
                     'date' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('Y-m-d'),
                     'label' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('M Y'),
                     'cold_water_loss' => 0,
@@ -360,7 +362,7 @@ class Dashboard extends Component
                 $item['cold_water_loss'],
                 $item['hot_water_loss'],
                 $item['cold_water_total'],
-                $item['hot_water_total']
+                $item['hot_water_total'],
             ];
         });
 
@@ -395,14 +397,14 @@ class Dashboard extends Component
         // Extract unique months with data
         $uniqueMonths = collect();
         foreach ($readings as $reading) {
-            $key = $reading->year . '-' . $reading->month;
-            if (!$uniqueMonths->contains('key', $key)) {
+            $key = $reading->year.'-'.$reading->month;
+            if (! $uniqueMonths->contains('key', $key)) {
                 $uniqueMonths->push([
                     'key' => $key,
                     'date' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('Y-m-d'),
                     'label' => Carbon::createFromDate($reading->year, $reading->month, 1)->format('M Y'),
-                    'year' => (int)$reading->year,
-                    'month' => (int)$reading->month,
+                    'year' => (int) $reading->year,
+                    'month' => (int) $reading->month,
                 ]);
             }
         }
@@ -531,8 +533,8 @@ class Dashboard extends Component
                 $prefixA = isset($matchesA[1]) ? trim($matchesA[1]) : '';
                 $prefixB = isset($matchesB[1]) ? trim($matchesB[1]) : '';
 
-                $numA = isset($matchesA[2]) ? (int)$matchesA[2] : 0;
-                $numB = isset($matchesB[2]) ? (int)$matchesB[2] : 0;
+                $numA = isset($matchesA[2]) ? (int) $matchesA[2] : 0;
+                $numB = isset($matchesB[2]) ? (int) $matchesB[2] : 0;
 
                 // Define prefix priority
                 $prefixPriority = [
@@ -541,7 +543,7 @@ class Dashboard extends Component
                     'АП' => 3,
                     'АT' => 2,
                     'АТ' => 2,
-                    'AP' => 3
+                    'AP' => 3,
                 ];
 
                 $priorityA = $prefixPriority[$prefixA] ?? 999;
@@ -554,13 +556,13 @@ class Dashboard extends Component
                     // Then by numeric part
                     $comparison = $numA <=> $numB;
                 }
-            } else if ($sortField === 'latest_reading_date') {
+            } elseif ($sortField === 'latest_reading_date') {
                 // Handle null dates
                 if ($valueA === null && $valueB === null) {
                     $comparison = 0;
-                } else if ($valueA === null) {
+                } elseif ($valueA === null) {
                     $comparison = -1;
-                } else if ($valueB === null) {
+                } elseif ($valueB === null) {
                     $comparison = 1;
                 } else {
                     $comparison = strcmp($valueA, $valueB);
@@ -590,7 +592,7 @@ class Dashboard extends Component
     public function getMonthsForStats()
     {
         // Get data with proper sorting to ensure months are in chronological order
-        $sortedData = collect($this->waterLossData)->sortBy(function($item) {
+        $sortedData = collect($this->waterLossData)->sortBy(function ($item) {
             return Carbon::parse($item['date']);
         })->values()->toArray();
 
@@ -605,7 +607,7 @@ class Dashboard extends Component
     public function getStats()
     {
         // Get data with proper sorting to ensure we have the most recent month
-        $sortedData = collect($this->waterLossData)->sortBy(function($item) {
+        $sortedData = collect($this->waterLossData)->sortBy(function ($item) {
             return Carbon::parse($item['date']);
         })->values()->toArray();
 
@@ -628,7 +630,7 @@ class Dashboard extends Component
         }
 
         // If no month is found, get the latest month
-        if (!$selectedMonthData && count($sortedData) > 0) {
+        if (! $selectedMonthData && count($sortedData) > 0) {
             $selectedMonthData = $sortedData[count($sortedData) - 1];
             $previousMonthData = count($sortedData) > 1 ? $sortedData[count($sortedData) - 2] : null;
         }
@@ -658,12 +660,12 @@ class Dashboard extends Component
 
             $stats[] = [
                 'title' => 'Студена вода',
-                'value' => number_format($centralValue, 1) . ' / ' . number_format($apartmentValue, 1) . ' / ' . number_format($lossValue, 1),
+                'value' => number_format($centralValue, 1).' / '.number_format($apartmentValue, 1).' / '.number_format($lossValue, 1),
                 'description' => 'Централен / Апартаменти / Загуби',
                 'trend' => abs($avgTrend),
                 'trendUp' => $avgTrend < 0, // Negative trend is good (less consumption)
                 'icon' => 'droplet',
-                'column' => 1
+                'column' => 1,
             ];
         }
 
@@ -689,12 +691,12 @@ class Dashboard extends Component
 
             $stats[] = [
                 'title' => 'Топла вода',
-                'value' => number_format($centralValue, 1) . ' / ' . number_format($apartmentValue, 1) . ' / ' . number_format($lossValue, 1),
+                'value' => number_format($centralValue, 1).' / '.number_format($apartmentValue, 1).' / '.number_format($lossValue, 1),
                 'description' => 'Централен / Апартаменти / Загуби',
                 'trend' => abs($avgTrend),
                 'trendUp' => $avgTrend < 0, // Negative trend is good (less consumption)
                 'icon' => 'fire',
-                'column' => 2
+                'column' => 2,
             ];
         }
 
@@ -732,7 +734,7 @@ class Dashboard extends Component
 
         // Get the readings status table data
         $readingsTableData = $this->getApartmentReadingsTable();
-        View::share("title", $title);
+        View::share('title', $title);
 
         return view('livewire.resident.dashboard', [
             'title' => $title,

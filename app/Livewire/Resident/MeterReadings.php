@@ -85,7 +85,7 @@ class MeterReadings extends Component
     public function render()
     {
         $title = 'Показания на водомери';
-        View::share("title", $title);
+        View::share('title', $title);
         $user = Auth::user();
 
         // Get all apartments associated with this user

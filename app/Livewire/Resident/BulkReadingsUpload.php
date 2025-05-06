@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Livewire\Resident;
-ini_set("max_execution_time", 600);
+
+ini_set('max_execution_time', 600);
 use App\Models\Reading;
 use App\Models\WaterMeter;
 use App\Services\OpenAIService;
@@ -18,14 +19,23 @@ class BulkReadingsUpload extends Component
     use WithFileUploads;
 
     public $readingDate;
+
     public $photos = [];
+
     public $selectedApartmentId = null;
+
     public array|Collection $apartments = [];
+
     public $meters = [];
+
     public $extractionResults = [];
+
     public $isProcessing = false;
+
     public $foreignMeters = [];
+
     public $processingComplete = false;
+
     public $recognizedMeters = [];
 
     public function mount()
@@ -45,7 +55,7 @@ class BulkReadingsUpload extends Component
 
     public function loadMeters()
     {
-        if (!$this->selectedApartmentId) {
+        if (! $this->selectedApartmentId) {
             return;
         }
 
@@ -68,7 +78,7 @@ class BulkReadingsUpload extends Component
                 'previous_date' => $previousReading ? $previousReading->reading_date->format('M d, Y') : 'Initial',
                 'initial_reading' => $meter->initial_reading,
                 'photo_path' => null,
-                'is_recognized' => false
+                'is_recognized' => false,
             ];
         }
 
@@ -110,7 +120,7 @@ class BulkReadingsUpload extends Component
 
         try {
             // Check OpenAI configuration
-            if (!OpenAIService::isConfigured()) {
+            if (! OpenAIService::isConfigured()) {
                 throw new \Exception('API за разпознаване на показания не е конфигуриран. Моля, обърнете се към администратор.');
             }
 
@@ -141,7 +151,7 @@ class BulkReadingsUpload extends Component
             }
 
             // Extract readings from all photos
-            $openAIService = new OpenAIService();
+            $openAIService = new OpenAIService;
             $this->extractionResults = $openAIService->extractMultipleReadings($photoPaths, $metersForAI);
 
             // Store any found meters not belonging to this apartment
@@ -154,21 +164,21 @@ class BulkReadingsUpload extends Component
                     $serialNumber = $result['serial_number'];
 
                     // Verify this meter belongs to the current apartment
-                    if (!in_array($meterId, array_values($validSerialNumbers))) {
+                    if (! in_array($meterId, array_values($validSerialNumbers))) {
                         // Log the detection of a foreign meter
                         \Log::warning('Foreign water meter detected in photo', [
                             'extracted_serial' => $serialNumber,
                             'meter_id' => $meterId,
                             'apartment_id' => $this->selectedApartmentId,
                             'user_id' => auth()->id(),
-                            'valid_meters' => array_values($validSerialNumbers)
+                            'valid_meters' => array_values($validSerialNumbers),
                         ]);
 
                         // Add to foreign meters list
                         $foreignMeters[] = [
                             'serial_number' => $serialNumber,
                             'reading' => $result['extracted_reading'],
-                            'image_path' => $result['image_path']
+                            'image_path' => $result['image_path'],
                         ];
 
                         // Skip processing this meter
@@ -188,15 +198,15 @@ class BulkReadingsUpload extends Component
                             if (substr_count($reading, '.') > 1) {
                                 // Multiple decimal points - keep only the first one
                                 $parts = explode('.', $reading);
-                                $reading = $parts[0] . '.' . $parts[1];
+                                $reading = $parts[0].'.'.$parts[1];
                             }
 
                             // Format to 3 decimal places
-                            $reading = number_format((float)$reading, 3, '.', '');
+                            $reading = number_format((float) $reading, 3, '.', '');
 
                             // Validate the reading value - must be greater than previous reading
                             $previousValue = $meter['previous_value'];
-                            if ((float)$reading < (float)$previousValue) {
+                            if ((float) $reading < (float) $previousValue) {
                                 // If extracted reading is less than previous, flag it but still set the value
                                 $this->meters[$index]['value_warning'] = "Извлеченото показание ({$reading}) е по-малко от предишното ({$previousValue}). Моля, проверете стойността.";
                             }
@@ -213,18 +223,18 @@ class BulkReadingsUpload extends Component
                 }
 
                 // Provide helpful messages based on detection results
-                if (!empty($foreignMeters)) {
+                if (! empty($foreignMeters)) {
                     // Store foreign meters data in a property for display
                     $this->foreignMeters = $foreignMeters;
 
-                    session()->flash('error', 'Открихме ' . count($foreignMeters) . ' водомер(а), които не принадлежат на този апартамент. Снимките трябва да съдържат само водомери от избрания апартамент.');
+                    session()->flash('error', 'Открихме '.count($foreignMeters).' водомер(а), които не принадлежат на този апартамент. Снимките трябва да съдържат само водомери от избрания апартамент.');
                 }
 
                 if (empty($this->recognizedMeters)) {
                     session()->flash('warning', 'Не успяхме да разпознаем водомери от този апартамент на снимките. Опитайте с по-ясни снимки или въведете показанията ръчно.');
                 } elseif (empty($foreignMeters)) {
                     // Only show success if no foreign meters detected
-                    session()->flash('success', 'Успешно разпознахме ' . count($this->recognizedMeters) . ' водомера. Моля, проверете показанията преди да ги подадете.');
+                    session()->flash('success', 'Успешно разпознахме '.count($this->recognizedMeters).' водомера. Моля, проверете показанията преди да ги подадете.');
                 }
             } else {
                 // Log failed detection
@@ -235,7 +245,7 @@ class BulkReadingsUpload extends Component
                     'image_count' => count($photoPaths),
                     'meter_count' => count($metersForAI),
                     'error_message' => $this->extractionResults['message'] ?? 'Unknown error',
-                    'raw_response' => $this->extractionResults
+                    'raw_response' => $this->extractionResults,
                 ]);
 
                 session()->flash('warning', $this->extractionResults['message'] ?? 'Неуспешно разпознаване на водомери. Опитайте с по-ясни снимки.');
@@ -243,16 +253,16 @@ class BulkReadingsUpload extends Component
 
         } catch (\Exception $e) {
             // Log detailed exception information
-            \Log::error('BulkReadingsUpload error: ' . $e->getMessage(), [
+            \Log::error('BulkReadingsUpload error: '.$e->getMessage(), [
                 'user_id' => auth()->id(),
                 'apartment_id' => $this->selectedApartmentId,
                 'date' => $this->readingDate,
                 'image_count' => count($photoPaths ?? []),
                 'exception_class' => get_class($e),
-                'stack_trace' => $e->getTraceAsString()
+                'stack_trace' => $e->getTraceAsString(),
             ]);
 
-            session()->flash('error', 'Грешка при обработката на снимките: ' . $e->getMessage());
+            session()->flash('error', 'Грешка при обработката на снимките: '.$e->getMessage());
         }
 
         $this->isProcessing = false;
@@ -272,7 +282,7 @@ class BulkReadingsUpload extends Component
      */
     public function addMeterManually($index)
     {
-        if (isset($this->meters[$index]) && !$this->meters[$index]['is_recognized']) {
+        if (isset($this->meters[$index]) && ! $this->meters[$index]['is_recognized']) {
             // Mark meter as manually added
             $this->meters[$index]['is_recognized'] = true;
             $this->meters[$index]['confidence'] = 'low';
@@ -301,7 +311,7 @@ class BulkReadingsUpload extends Component
         ];
 
         foreach ($this->meters as $index => $meter) {
-            if ($meter['is_recognized'] && !empty($meter['value'])) {
+            if ($meter['is_recognized'] && ! empty($meter['value'])) {
                 // Ensure value is greater than or equal to previous value
                 $previousValue = (float) $meter['previous_value'];
                 $rules["meters.{$index}.value"] = "required|numeric|min:{$previousValue}";
@@ -316,7 +326,7 @@ class BulkReadingsUpload extends Component
 
         foreach ($this->meters as $meter) {
             // Skip meters without values or not recognized
-            if (!$meter['is_recognized'] || empty($meter['value'])) {
+            if (! $meter['is_recognized'] || empty($meter['value'])) {
                 continue;
             }
 
@@ -327,14 +337,14 @@ class BulkReadingsUpload extends Component
             $totalConsumption += $consumption;
 
             // Create the reading
-            $reading = new Reading();
+            $reading = new Reading;
             $reading->water_meter_id = $meter['id'];
             $reading->user_id = Auth::id();
             $reading->reading_date = Carbon::parse($this->readingDate);
             $reading->value = $meter['value'];
 
             // Handle photo - move from temp to permanent storage
-            if (!empty($meter['photo_path'])) {
+            if (! empty($meter['photo_path'])) {
                 $tempPath = $meter['photo_path'];
                 $photoPath = str_replace('readings-bulk-temp', 'reading-photos', $tempPath);
 
@@ -350,7 +360,7 @@ class BulkReadingsUpload extends Component
             }
 
             // Build detailed notes about the reading
-            $notes = "Показание добавено чрез AI разпознаване на снимка.";
+            $notes = 'Показание добавено чрез AI разпознаване на снимка.';
 
             // Add info about the recognition if available
             if (isset($meter['confidence'])) {
@@ -365,11 +375,11 @@ class BulkReadingsUpload extends Component
 
             // Add info about manual editing if applicable
             if (isset($meter['is_manually_added']) && $meter['is_manually_added']) {
-                $notes .= " Водомерът е добавен ръчно.";
+                $notes .= ' Водомерът е добавен ръчно.';
             }
 
             // Add consumption info
-            $notes .= " Консумация: " . number_format($consumption, 3) . " м³.";
+            $notes .= ' Консумация: '.number_format($consumption, 3).' м³.';
 
             // Store notes
             $reading->notes = $notes;
@@ -387,6 +397,7 @@ class BulkReadingsUpload extends Component
             session()->flash('success', "Успешно подадени {$readingsSubmitted} показания с обща консумация {$totalConsumptionFormatted} м³.");
         } else {
             session()->flash('error', 'Не бяха подадени показания. Моля, въведете поне едно показание.');
+
             return;
         }
 
@@ -396,9 +407,10 @@ class BulkReadingsUpload extends Component
     public function render()
     {
         $title = 'Групово качване на показания';
-        View::share("title", $title);
+        View::share('title', $title);
+
         return view('livewire.resident.bulk-readings-upload', [
-            'title' => $title
+            'title' => $title,
         ]);
     }
 }
